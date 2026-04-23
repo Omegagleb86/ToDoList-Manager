@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ todo_list.title }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            background: #f8fafc;
+            color: #0f172a;
+        }
+        .wrapper {
+            max-width: 1300px;
+            margin: 0 auto;
+            padding: 24px 20px 48px;
+        }
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .board, .matrix {
+            display: grid;
+            gap: 16px;
+        }
+        .board {
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            margin-bottom: 32px;
+        }
+        .matrix {
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        }
+        .column {
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 16px;
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+        }
+        .task {
+            background: #eef2ff;
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 10px;
+        }
+        .task:last-child {
+            margin-bottom: 0;
+        }
+        a {
+            color: #2563eb;
+            text-decoration: none;
+        }
+        small {
+            color: #64748b;
+        }
+    </style>
+</head>
+<body>
+<div class="wrapper">
+    <div class="topbar">
+        <div>
+            <h1>{{ todo_list.title }}</h1>
+            <p>{{ todo_list.description|default:"Без описания" }}</p>
+        </div>
+        <div>
+            <a href="{% url 'tasks:dashboard' %}">Назад к спискам</a>
+        </div>
+    </div>
+
+    <h2>Канбан-колонки</h2>
+    <div class="board">
+        {% for column in columns.values %}
+            <div class="column">
+                <h3>{{ column.label }}</h3>
+                {% for task in column.tasks %}
+                    <div class="task">
+                        <strong>{{ task.title }}</strong><br>
+                        <small>Позиция: {{ task.position }} · {{ task.priority_label }}</small>
+                    </div>
+                {% empty %}
+                    <p><small>Нет задач в этой колонке.</small></p>
+                {% endfor %}
+            </div>
+        {% endfor %}
+    </div>
+
+    <h2>Матрица важности/срочности</h2>
+    <div class="matrix">
+        {% for section in priority_matrix.values %}
+            <div class="column">
+                <h3>{{ section.label }}</h3>
+                {% for task in section.tasks %}
+                    <div class="task">
+                        <strong>{{ task.title }}</strong><br>
+                        <small>{{ task.get_status_display }} · {{ task.todo_list.title }}</small>
+                    </div>
+                {% empty %}
+                    <p><small>Нет задач в этом квадрате.</small></p>
+                {% endfor %}
+            </div>
+        {% endfor %}
+    </div>
+</div>
+</body>
+</html>
