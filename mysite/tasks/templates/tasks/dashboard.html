@@ -1,11 +1,6 @@
-{% load static tailwind_tags %}
-
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ToDoList Backend Demo</title>
+{% extends "base_layout.html" %}
+{% block title %}ToDoList Backend Demo{% endblock title %}
+{% block style %}
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -50,11 +45,14 @@
             color: #6b7280;
         }
     </style>
-
-    {% tailwind_css %}
-
-</head>
-<body>
+{% endblock style %}
+{% block content %}
+<header>
+    <article class="[--size:20px] ml-40 bg-blue-200 rounded-[var(--size)]">
+        <h1>ToDoList Backend Demo</h1>
+        <p>Простой бэкенд для управления списками задач. Использует Django и Django REST Framework.</p>
+    </article>
+</header>
 <div class="wrapper">
     <div class="hero">
         <h1>ToDoList backend demo</h1>
@@ -102,5 +100,4 @@
         </div>
     {% endif %}
 </div>
-</body>
-</html>
+{% endblock content %}

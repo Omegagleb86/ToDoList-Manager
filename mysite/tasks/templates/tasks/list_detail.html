@@ -1,10 +1,7 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ todo_list.title }}</title>
-    <style>
+{% extends "base_layout.html" %}
+{% block title %}{{ todo_list.title }}{% endblock title %}
+{% block style %}
+<style>
         body {
             font-family: Arial, sans-serif;
             margin: 0;
@@ -57,8 +54,8 @@
             color: #64748b;
         }
     </style>
-</head>
-<body>
+{% endblock style %}
+{% block content %}
 <div class="wrapper">
     <div class="topbar">
         <div>
@@ -98,11 +95,10 @@
                         <small>{{ task.get_status_display }} · {{ task.todo_list.title }}</small>
                     </div>
                 {% empty %}
-                    <p><small>Нет задач в этом квадрате.</small></p>
+                    <p><small>Нет задач в этой секции.</small></p>
                 {% endfor %}
             </div>
         {% endfor %}
     </div>
 </div>
-</body>
-</html>
+{% endblock content %}
