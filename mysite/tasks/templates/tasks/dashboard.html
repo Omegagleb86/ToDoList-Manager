@@ -1,4 +1,5 @@
 {% extends "base_layout.html" %}
+{% load tailwind_tags %}
 {% block title %}ToDoList Backend Demo{% endblock title %}
 {% block style %}
     <style>
@@ -47,12 +48,10 @@
     </style>
 {% endblock style %}
 {% block content %}
-<header>
     <article class="[--size:20px] ml-40 bg-blue-200 rounded-[var(--size)]">
         <h1>ToDoList Backend Demo</h1>
         <p>Простой бэкенд для управления списками задач. Использует Django и Django REST Framework.</p>
     </article>
-</header>
 <div class="wrapper">
     <div class="hero">
         <h1>ToDoList backend demo</h1>
