@@ -68,6 +68,69 @@
             border-radius: 16px;
             padding: 18px;
             box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+            position: relative;
+        }
+        .card-header {
+            align-items: flex-start;
+            display: flex;
+            gap: 10px;
+            justify-content: space-between;
+        }
+        .list-options {
+            position: relative;
+        }
+        .options-button {
+            align-items: center;
+            background: transparent;
+            border: 0;
+            border-radius: 8px;
+            color: #475569;
+            cursor: pointer;
+            display: inline-flex;
+            font-size: 22px;
+            height: 28px;
+            justify-content: center;
+            line-height: 1;
+            width: 28px;
+        }
+        .options-button:hover {
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+        .options-menu {
+            background: #fff;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            box-shadow: 0 12px 30px rgba(15, 23, 42, 0.16);
+            display: none;
+            min-width: 150px;
+            padding: 6px;
+            position: absolute;
+            right: 0;
+            top: 32px;
+            z-index: 4;
+        }
+        .options-menu.is-open {
+            display: block;
+        }
+        .menu-button {
+            background: transparent;
+            border: 0;
+            border-radius: 8px;
+            cursor: pointer;
+            font: inherit;
+            padding: 8px 10px;
+            text-align: left;
+            width: 100%;
+        }
+        .menu-button:hover {
+            background: #eff6ff;
+        }
+        .menu-button.danger {
+            color: #b91c1c;
+        }
+        .menu-button.danger:hover {
+            background: #fef2f2;
         }
         .lists {
             grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
@@ -200,7 +263,30 @@
         <div class="lists">
             {% for todo_list in todo_lists %}
                 <div class="card">
-                    <h3>{{ todo_list.title }}</h3>
+                    <div class="card-header">
+                        <h3>{{ todo_list.title }}</h3>
+                        <div class="list-options">
+                            <button class="options-button" type="button" aria-label="Опции списка" data-options-button>&#8942;</button>
+                            <div class="options-menu" data-options-menu>
+                                <button
+                                    class="menu-button"
+                                    type="button"
+                                    data-edit-list-button
+                                    data-list-id="{{ todo_list.pk }}"
+                                    data-title="{{ todo_list.title }}"
+                                    data-description="{{ todo_list.description }}"
+                                    data-color="{{ todo_list.color }}"
+                                    data-icon="{{ todo_list.icon }}"
+                                >Редактировать</button>
+                                <form method="post" data-delete-list-form>
+                                    {% csrf_token %}
+                                    <input type="hidden" name="form_action" value="delete_list">
+                                    <input type="hidden" name="list_id" value="{{ todo_list.pk }}">
+                                    <button class="menu-button danger" type="submit">Удалить</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
                     <p>{{ todo_list.description|default:"Без описания" }}</p>
                     <p><small>Задач: {{ todo_list.task_count }}</small></p>
                     <a href="{% url 'tasks:list_detail' todo_list.pk %}">Открыть доску</a>
@@ -223,6 +309,37 @@
 </div>
 
 {% if user_obj %}
+    <div class="modal{% if is_edit_list_form_open %} is-open{% endif %}" data-edit-list-form-modal>
+        <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="edit-list-title">
+            <div class="modal-title">
+                <h2 id="edit-list-title">Редактировать список</h2>
+                <button class="close-button" type="button" aria-label="Закрыть форму" data-close-edit-list-form>&times;</button>
+            </div>
+            <form method="post" class="form-grid" data-edit-list-form>
+                {% csrf_token %}
+                <input type="hidden" name="form_action" value="edit_list">
+                <input type="hidden" name="list_id" value="{{ edit_todo_list_id|default:'' }}" data-edit-list-id>
+                {{ edit_todo_list_form.non_field_errors }}
+                {% for field in edit_todo_list_form %}
+                    <div class="form-field">
+                        {{ field.label_tag }}
+                        {{ field }}
+                        {% if field.help_text %}
+                            <span class="form-help">{{ field.help_text }}</span>
+                        {% endif %}
+                        {% for error in field.errors %}
+                            <span class="form-error">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                {% endfor %}
+                <div class="form-actions">
+                    <button class="button button-secondary" type="button" data-close-edit-list-form>Отмена</button>
+                    <button class="button" type="submit">Сохранить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <div class="modal{% if is_create_list_form_open %} is-open{% endif %}" data-list-form-modal>
         <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="create-list-title">
             <div class="modal-title">
@@ -255,6 +372,13 @@
         const listFormModal = document.querySelector('[data-list-form-modal]');
         const openListFormButton = document.querySelector('[data-open-list-form]');
         const closeListFormButtons = document.querySelectorAll('[data-close-list-form]');
+        const editListFormModal = document.querySelector('[data-edit-list-form-modal]');
+        const closeEditListFormButtons = document.querySelectorAll('[data-close-edit-list-form]');
+        const editListForm = document.querySelector('[data-edit-list-form]');
+        const editListIdInput = document.querySelector('[data-edit-list-id]');
+        const optionsButtons = document.querySelectorAll('[data-options-button]');
+        const editListButtons = document.querySelectorAll('[data-edit-list-button]');
+        const deleteListForms = document.querySelectorAll('[data-delete-list-form]');
 
         function openListForm() {
             listFormModal.classList.add('is-open');
@@ -262,6 +386,26 @@
 
         function closeListForm() {
             listFormModal.classList.remove('is-open');
+        }
+
+        function closeOptionsMenus() {
+            document.querySelectorAll('[data-options-menu].is-open').forEach((menu) => {
+                menu.classList.remove('is-open');
+            });
+        }
+
+        function openEditListForm(button) {
+            editListIdInput.value = button.dataset.listId;
+            editListForm.elements['edit_list-title'].value = button.dataset.title || '';
+            editListForm.elements['edit_list-description'].value = button.dataset.description || '';
+            editListForm.elements['edit_list-color'].value = button.dataset.color || '#000000';
+            editListForm.elements['edit_list-icon'].value = button.dataset.icon || '';
+            closeOptionsMenus();
+            editListFormModal.classList.add('is-open');
+        }
+
+        function closeEditListForm() {
+            editListFormModal.classList.remove('is-open');
         }
 
         openListFormButton.addEventListener('click', openListForm);
@@ -273,6 +417,36 @@
                 closeListForm();
             }
         });
+        closeEditListFormButtons.forEach((button) => {
+            button.addEventListener('click', closeEditListForm);
+        });
+        editListFormModal.addEventListener('click', (event) => {
+            if (event.target === editListFormModal) {
+                closeEditListForm();
+            }
+        });
+        optionsButtons.forEach((button) => {
+            button.addEventListener('click', (event) => {
+                event.stopPropagation();
+                const menu = button.parentElement.querySelector('[data-options-menu]');
+                const isOpen = menu.classList.contains('is-open');
+                closeOptionsMenus();
+                if (!isOpen) {
+                    menu.classList.add('is-open');
+                }
+            });
+        });
+        editListButtons.forEach((button) => {
+            button.addEventListener('click', () => openEditListForm(button));
+        });
+        deleteListForms.forEach((form) => {
+            form.addEventListener('submit', (event) => {
+                if (!confirm('Удалить список задач вместе со всеми задачами?')) {
+                    event.preventDefault();
+                }
+            });
+        });
+        document.addEventListener('click', closeOptionsMenus);
     </script>
 {% endif %}
 {% endblock content %}

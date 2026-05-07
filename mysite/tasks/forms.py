@@ -10,7 +10,10 @@ class TodoListForm(forms.ModelForm):
 
     def clean_title(self):
         title = self.cleaned_data['title']
-        if self.user and TodoList.objects.filter(user=self.user, title=title).exists():
+        lists = TodoList.objects.filter(user=self.user, title=title)
+        if self.instance.pk:
+            lists = lists.exclude(pk=self.instance.pk)
+        if self.user and lists.exists():
             raise forms.ValidationError('У пользователя уже есть список с таким названием.')
         return title
 

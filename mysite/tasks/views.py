@@ -42,6 +42,12 @@ class DashboardView(View):
             messages.error(request, 'Нельзя создать список: пользователь не найден.')
             return redirect('tasks:dashboard')
 
+        action = request.POST.get('form_action')
+        if action == 'edit_list':
+            return self.update_list(request, user)
+        if action == 'delete_list':
+            return self.delete_list(request, user)
+
         form = TodoListForm(request.POST, user=user)
         if form.is_valid():
             todo_list = form.save(commit=False)
@@ -59,11 +65,57 @@ class DashboardView(View):
             self.get_context(
                 user,
                 todo_list_form=form,
+                edit_todo_list_form=TodoListForm(user=user, prefix='edit_list'),
                 is_create_list_form_open=True,
             ),
         )
 
-    def get_context(self, user, todo_list_form, is_create_list_form_open=False):
+    def update_list(self, request, user):
+        todo_list = TodoList.objects.filter(user=user, pk=request.POST.get('list_id')).first()
+        if todo_list is None:
+            raise Http404('Список задач не найден.')
+
+        form = TodoListForm(
+            request.POST,
+            instance=todo_list,
+            user=user,
+            prefix='edit_list',
+        )
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Список задач обновлен.')
+            return redirect('tasks:dashboard')
+
+        return render(
+            request,
+            self.template_name,
+            self.get_context(
+                user,
+                todo_list_form=TodoListForm(user=user),
+                edit_todo_list_form=form,
+                edit_todo_list_id=todo_list.pk,
+                is_edit_list_form_open=True,
+            ),
+        )
+
+    def delete_list(self, request, user):
+        todo_list = TodoList.objects.filter(user=user, pk=request.POST.get('list_id')).first()
+        if todo_list is None:
+            raise Http404('Список задач не найден.')
+
+        todo_list.delete()
+        messages.success(request, 'Список задач удален.')
+        return redirect('tasks:dashboard')
+
+    def get_context(
+        self,
+        user,
+        todo_list_form,
+        edit_todo_list_form=None,
+        is_create_list_form_open=False,
+        is_edit_list_form_open=False,
+        edit_todo_list_id=None,
+    ):
         todo_lists = (
             TodoList.objects.filter(user=user, is_archived=False)
             .annotate(task_count=Count('tasks'))
@@ -93,7 +145,11 @@ class DashboardView(View):
                 ).count(),
             },
             'todo_list_form': todo_list_form,
+            'edit_todo_list_form': edit_todo_list_form
+            or TodoListForm(user=user, prefix='edit_list'),
             'is_create_list_form_open': is_create_list_form_open,
+            'is_edit_list_form_open': is_edit_list_form_open,
+            'edit_todo_list_id': edit_todo_list_id,
         }
         return context
 
@@ -132,6 +188,8 @@ class TodoListDetailView(View):
 
         if request.POST.get('form_action') == 'edit_task':
             return self.update_task(request, user, todo_list)
+        if request.POST.get('form_action') == 'delete_task':
+            return self.delete_task(request, user, todo_list)
 
         form = TaskForm(request.POST, user=user, todo_list=todo_list)
         if form.is_valid():
@@ -201,6 +259,21 @@ class TodoListDetailView(View):
                 is_edit_task_form_open=True,
             ),
         )
+
+    def delete_task(self, request, user, todo_list):
+        task = Task.objects.filter(
+            user=user,
+            todo_list=todo_list,
+            pk=request.POST.get('task_id'),
+            is_deleted=False,
+        ).first()
+        if task is None:
+            raise Http404('Задача не найдена.')
+
+        task.is_deleted = True
+        task.save()
+        messages.success(request, 'Задача удалена.')
+        return redirect('tasks:list_detail', pk=todo_list.pk)
 
     def get_context(
         self,

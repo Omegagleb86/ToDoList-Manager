@@ -136,6 +136,12 @@
         .menu-button:hover {
             background: #eff6ff;
         }
+        .menu-button.danger {
+            color: #b91c1c;
+        }
+        .menu-button.danger:hover {
+            background: #fef2f2;
+        }
         a {
             color: #2563eb;
             text-decoration: none;
@@ -268,6 +274,12 @@
                                         data-start-date="{{ task.start_date|date:'Y-m-d\\TH:i' }}"
                                         data-due-date="{{ task.due_date|date:'Y-m-d\\TH:i' }}"
                                     >Редактировать</button>
+                                    <form method="post" data-delete-task-form>
+                                        {% csrf_token %}
+                                        <input type="hidden" name="form_action" value="delete_task">
+                                        <input type="hidden" name="task_id" value="{{ task.pk }}">
+                                        <button class="menu-button danger" type="submit">Удалить</button>
+                                    </form>
                                 </div>
                             </div>
                         </div>
@@ -305,6 +317,12 @@
                                         data-start-date="{{ task.start_date|date:'Y-m-d\\TH:i' }}"
                                         data-due-date="{{ task.due_date|date:'Y-m-d\\TH:i' }}"
                                     >Редактировать</button>
+                                    <form method="post" data-delete-task-form>
+                                        {% csrf_token %}
+                                        <input type="hidden" name="form_action" value="delete_task">
+                                        <input type="hidden" name="task_id" value="{{ task.pk }}">
+                                        <button class="menu-button danger" type="submit">Удалить</button>
+                                    </form>
                                 </div>
                             </div>
                         </div>
@@ -401,6 +419,7 @@
     const editTaskIdInput = document.querySelector('[data-edit-task-id]');
     const optionsButtons = document.querySelectorAll('[data-options-button]');
     const editTaskButtons = document.querySelectorAll('[data-edit-task-button]');
+    const deleteTaskForms = document.querySelectorAll('[data-delete-task-form]');
 
     function openTaskForm() {
         taskFormModal.classList.add('is-open');
@@ -463,6 +482,13 @@
     });
     editTaskButtons.forEach((button) => {
         button.addEventListener('click', () => openEditTaskForm(button));
+    });
+    deleteTaskForms.forEach((form) => {
+        form.addEventListener('submit', (event) => {
+            if (!confirm('Удалить задачу?')) {
+                event.preventDefault();
+            }
+        });
     });
     document.addEventListener('click', closeOptionsMenus);
 </script>
