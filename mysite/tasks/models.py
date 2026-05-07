@@ -26,7 +26,6 @@ class TodoList(models.Model):
     title = models.CharField(max_length=200, verbose_name='Название')
     description = models.TextField(blank=True, verbose_name='Описание')
     color = models.CharField(max_length=7, blank=True, verbose_name='Цвет')
-    icon = models.CharField(max_length=50, blank=True, verbose_name='Иконка')
     position = models.PositiveIntegerField(default=0, verbose_name='Позиция')
     is_archived = models.BooleanField(default=False, verbose_name='В архиве')
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Создан')

@@ -10,6 +10,16 @@
                 <p class="mt-1 max-w-2xl text-sm text-[#cdbebe]">{{ todo_list.description|default:"Без описания" }}</p>
             </div>
             <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+                <form method="get">
+                    <select class="w-full rounded-xl border border-[#6f5a5a] bg-[#2a2020] px-3 py-2 text-sm text-[#f4eeee] focus:border-[#7fc8ff] focus:outline-none focus:ring-1 focus:ring-[#7fc8ff] sm:w-auto" name="task_sort" onchange="this.form.submit()">
+                        <option value="position" {% if task_sort == 'position' %}selected{% endif %}>По порядку</option>
+                        <option value="title" {% if task_sort == 'title' %}selected{% endif %}>По названию</option>
+                        <option value="created" {% if task_sort == 'created' %}selected{% endif %}>Сначала новые</option>
+                        <option value="updated" {% if task_sort == 'updated' %}selected{% endif %}>Недавно обновлены</option>
+                        <option value="due" {% if task_sort == 'due' %}selected{% endif %}>По дедлайну</option>
+                        <option value="priority" {% if task_sort == 'priority' %}selected{% endif %}>По приоритету</option>
+                    </select>
+                </form>
                 <button class="w-full rounded-xl bg-[#7fc8ff] px-4 py-2 text-sm font-semibold text-[#1f1e1d] transition hover:bg-[#9bd6ff] sm:w-auto" type="button" data-open-task-form>
                     Добавить задачу
                 </button>
@@ -36,7 +46,7 @@
                 <span class="h-1 w-8 rounded-full "></span> 
                 {% comment %} bg-[#ff7ac8] {% endcomment %}
             </div>
-            <div class="grid gap-4 lg:grid-cols-4">
+            <div class="grid gap-3 lg:grid-cols-3">
                 {% for column in columns.values %}
                     <div class="rounded-2xl bg-[#3d3030] p-3 shadow-lg shadow-black/20">
                         <div class="mb-3 flex items-center justify-between gap-3">
@@ -45,14 +55,24 @@
                         </div>
                         <div class="grid gap-2">
                             {% for task in column.tasks %}
-                                <article class="rounded-xl bg-[#2a2020] p-3 shadow-sm shadow-black/20">
+                                <article class="rounded-xl bg-[#2a2020] p-3 shadow-sm shadow-black/20 transition data-[dragging=true]:opacity-60" data-task-card data-task-id="{{ task.pk }}" data-task-status="{{ task.status }}" draggable="false">
                                     <div class="flex items-start justify-between gap-3">
-                                        <div class="min-w-0">
-                                            <div class="flex items-center gap-2">
+                                        <div class="flex min-w-0 items-start gap-3">
+                                            <button class="mt-0.5 grid h-7 w-5 shrink-0 cursor-grab grid-cols-2 gap-0.5 rounded-md p-1 text-[#f4eeee] active:cursor-grabbing" type="button" aria-label="Перетащить задачу" data-drag-handle>
+                                                <span class="h-1 w-1 rounded-full bg-current"></span>
+                                                <span class="h-1 w-1 rounded-full bg-current"></span>
+                                                <span class="h-1 w-1 rounded-full bg-current"></span>
+                                                <span class="h-1 w-1 rounded-full bg-current"></span>
+                                                <span class="h-1 w-1 rounded-full bg-current"></span>
+                                                <span class="h-1 w-1 rounded-full bg-current"></span>
+                                            </button>
+                                            <div class="min-w-0">
+                                                <div class="flex items-center gap-2">
                                                 <span class="h-3 w-3 shrink-0 rounded-full" style="background-color: {{ task.color|default:task.todo_list.color|default:'#7fc8ff' }};"></span>
                                                 <strong class="block truncate text-sm font-medium text-[#fff8f8]">{{ task.title }}</strong>
+                                                </div>
+                                                <small class="mt-1 block text-xs text-[#cdbebe]">{{ task.priority_label }}</small>
                                             </div>
-                                            <small class="mt-1 block text-xs text-[#cdbebe]">Позиция: {{ task.position }} · {{ task.priority_label }}</small>
                                         </div>
                                         <div class="relative shrink-0">
                                             <button class="flex h-7 w-7 items-center justify-center rounded-lg text-xl leading-none text-[#f4eeee] transition hover:bg-[#463636]" type="button" aria-label="Опции задачи" data-options-button>&#8942;</button>
@@ -71,6 +91,12 @@
                                                     data-start-date="{{ task.start_date|date:'Y-m-d\\TH:i' }}"
                                                     data-due-date="{{ task.due_date|date:'Y-m-d\\TH:i' }}"
                                                 >Редактировать</button>
+                                                <form method="post" data-archive-task-form>
+                                                    {% csrf_token %}
+                                                    <input type="hidden" name="form_action" value="archive_task">
+                                                    <input type="hidden" name="task_id" value="{{ task.pk }}">
+                                                    <button class="w-full rounded-lg px-3 py-2 text-left text-sm text-[#f4eeee] hover:bg-[#463636]" type="submit">В архив</button>
+                                                </form>
                                                 <form method="post" data-delete-task-form>
                                                     {% csrf_token %}
                                                     <input type="hidden" name="form_action" value="delete_task">
@@ -124,6 +150,12 @@
                                                     data-start-date="{{ task.start_date|date:'Y-m-d\\TH:i' }}"
                                                     data-due-date="{{ task.due_date|date:'Y-m-d\\TH:i' }}"
                                                 >Редактировать</button>
+                                                <form method="post" data-archive-task-form>
+                                                    {% csrf_token %}
+                                                    <input type="hidden" name="form_action" value="archive_task">
+                                                    <input type="hidden" name="task_id" value="{{ task.pk }}">
+                                                    <button class="w-full rounded-lg px-3 py-2 text-left text-sm text-[#f4eeee] hover:bg-[#463636]" type="submit">В архив</button>
+                                                </form>
                                                 <form method="post" data-delete-task-form>
                                                     {% csrf_token %}
                                                     <input type="hidden" name="form_action" value="delete_task">
@@ -139,6 +171,50 @@
                             {% endfor %}
                         </div>
                     </div>
+                {% endfor %}
+            </div>
+        </section>
+
+        <section class="mt-8 rounded-3xl bg-[#4b3939] p-4 shadow-2xl shadow-black/20 sm:p-6">
+            <div class="mb-4 flex items-center justify-between gap-4">
+                <div>
+                    <h2 class="text-lg font-medium text-[#fff8f8]">Архив</h2>
+                    <p class="mt-1 text-sm text-[#cdbebe]">Сюда попадают задачи, которые пока не нужны на активной доске.</p>
+                </div>
+                <span class="rounded-full bg-[#2a2020] px-3 py-1 text-xs text-[#cdbebe]">{{ archived_tasks|length }}</span>
+            </div>
+            <div class="grid gap-2 md:grid-cols-2">
+                {% for task in archived_tasks %}
+                    <article class="rounded-xl bg-[#2a2020] p-3">
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="min-w-0">
+                                <div class="flex items-center gap-2">
+                                    <span class="h-3 w-3 shrink-0 rounded-full" style="background-color: {{ task.color|default:task.todo_list.color|default:'#7fc8ff' }};"></span>
+                                    <strong class="block truncate text-sm font-medium text-[#fff8f8]">{{ task.title }}</strong>
+                                </div>
+                                <small class="mt-1 block text-xs text-[#cdbebe]">{{ task.priority_label }}</small>
+                            </div>
+                            <div class="relative shrink-0">
+                                <button class="flex h-7 w-7 items-center justify-center rounded-lg text-xl leading-none text-[#f4eeee] transition hover:bg-[#463636]" type="button" aria-label="Опции задачи" data-options-button>&#8942;</button>
+                                <div class="absolute right-0 top-8 z-20 hidden w-40 rounded-xl border border-[#6f5a5a] bg-[#2a2020] p-1 shadow-xl shadow-black/30" data-options-menu>
+                                    <form method="post">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="form_action" value="restore_task">
+                                        <input type="hidden" name="task_id" value="{{ task.pk }}">
+                                        <button class="w-full rounded-lg px-3 py-2 text-left text-sm text-[#f4eeee] hover:bg-[#463636]" type="submit">Вернуть</button>
+                                    </form>
+                                    <form method="post" data-delete-task-form>
+                                        {% csrf_token %}
+                                        <input type="hidden" name="form_action" value="delete_task">
+                                        <input type="hidden" name="task_id" value="{{ task.pk }}">
+                                        <button class="w-full rounded-lg px-3 py-2 text-left text-sm text-[#ff9a9a] hover:bg-[#4b2f2f]" type="submit">Удалить</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </article>
+                {% empty %}
+                    <p class="rounded-xl bg-[#2a2020]/60 p-3 text-sm text-[#bdaaaa]">Архив пуст.</p>
                 {% endfor %}
             </div>
         </section>
@@ -222,6 +298,10 @@
     const optionsButtons = document.querySelectorAll('[data-options-button]');
     const editTaskButtons = document.querySelectorAll('[data-edit-task-button]');
     const deleteTaskForms = document.querySelectorAll('[data-delete-task-form]');
+    const taskCards = document.querySelectorAll('[data-task-card]');
+    const dragHandles = document.querySelectorAll('[data-drag-handle]');
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    let draggedTask = null;
 
     function showModal(modal) {
         modal.classList.remove('hidden');
@@ -288,6 +368,58 @@
         form.addEventListener('submit', (event) => {
             if (!confirm('Удалить задачу?')) {
                 event.preventDefault();
+            }
+        });
+    });
+    dragHandles.forEach((handle) => {
+        handle.addEventListener('pointerdown', () => {
+            handle.closest('[data-task-card]').setAttribute('draggable', 'true');
+        });
+        handle.addEventListener('pointerup', () => {
+            handle.closest('[data-task-card]').setAttribute('draggable', 'false');
+        });
+    });
+    taskCards.forEach((card) => {
+        card.addEventListener('dragstart', (event) => {
+            draggedTask = card;
+            card.dataset.dragging = 'true';
+            event.dataTransfer.effectAllowed = 'move';
+        });
+        card.addEventListener('dragend', () => {
+            card.dataset.dragging = 'false';
+            card.setAttribute('draggable', 'false');
+            draggedTask = null;
+        });
+        card.addEventListener('dragover', (event) => {
+            if (!draggedTask || draggedTask === card || draggedTask.dataset.taskStatus !== card.dataset.taskStatus) {
+                return;
+            }
+            event.preventDefault();
+            event.dataTransfer.dropEffect = 'move';
+        });
+        card.addEventListener('drop', async (event) => {
+            if (!draggedTask || draggedTask === card || draggedTask.dataset.taskStatus !== card.dataset.taskStatus) {
+                return;
+            }
+            event.preventDefault();
+            const rect = card.getBoundingClientRect();
+            const insertAfter = event.clientY > rect.top + rect.height / 2;
+            const body = new URLSearchParams({
+                form_action: 'reorder_task',
+                task_id: draggedTask.dataset.taskId,
+                target_task_id: card.dataset.taskId,
+                insert_after: insertAfter ? 'true' : 'false',
+            });
+            const response = await fetch(window.location.pathname, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body,
+            });
+            if (response.ok) {
+                window.location.href = `${window.location.pathname}?task_sort=position`;
             }
         });
     });

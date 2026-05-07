@@ -2,6 +2,7 @@ from collections import OrderedDict
 
 from django.contrib.auth import login, logout
 from django.contrib import messages
+from django.db import transaction
 from django.db.models import Count, Max
 from django.http import Http404, JsonResponse
 from django.shortcuts import redirect, render
@@ -64,6 +65,13 @@ class LogoutView(View):
 
 class DashboardView(View):
     template_name = 'tasks/dashboard.html'
+    list_sort_options = {
+        'position': ('position', 'title'),
+        'title': ('title',),
+        'created': ('-created_at',),
+        'updated': ('-updated_at',),
+        'tasks': ('-task_count', 'title'),
+    }
 
     def get(self, request):
         if not request.user.is_authenticated:
@@ -155,10 +163,14 @@ class DashboardView(View):
         is_edit_list_form_open=False,
         edit_todo_list_id=None,
     ):
+        list_sort = self.list_sort_options.get(
+            self.request_sort(user) if hasattr(self, 'request') else 'position',
+            self.list_sort_options['position'],
+        )
         todo_lists = (
             TodoList.objects.filter(user=user, is_archived=False)
             .annotate(task_count=Count('tasks'))
-            .order_by('position', 'title')
+            .order_by(*list_sort)
         )
         recent_tasks = (
             Task.objects.filter(user=user, is_deleted=False)
@@ -189,12 +201,31 @@ class DashboardView(View):
             'is_create_list_form_open': is_create_list_form_open,
             'is_edit_list_form_open': is_edit_list_form_open,
             'edit_todo_list_id': edit_todo_list_id,
+            'list_sort': self.request_sort(user) if hasattr(self, 'request') else 'position',
         }
         return context
+
+    def dispatch(self, request, *args, **kwargs):
+        self.request = request
+        return super().dispatch(request, *args, **kwargs)
+
+    def request_sort(self, user):
+        sort = self.request.GET.get('list_sort', 'position')
+        if sort not in self.list_sort_options:
+            return 'position'
+        return sort
 
 
 class TodoListDetailView(View):
     template_name = 'tasks/list_detail.html'
+    task_sort_options = {
+        'position': ('status', 'position', '-created_at'),
+        'title': ('status', 'title'),
+        'created': ('status', '-created_at'),
+        'updated': ('status', '-updated_at'),
+        'due': ('status', 'due_date', 'position'),
+        'priority': ('status', '-is_important', '-is_urgent', 'position'),
+    }
 
     def get(self, request, pk):
         if not request.user.is_authenticated:
@@ -229,6 +260,12 @@ class TodoListDetailView(View):
             return self.update_task(request, user, todo_list)
         if request.POST.get('form_action') == 'delete_task':
             return self.delete_task(request, user, todo_list)
+        if request.POST.get('form_action') == 'archive_task':
+            return self.archive_task(request, user, todo_list)
+        if request.POST.get('form_action') == 'restore_task':
+            return self.restore_task(request, user, todo_list)
+        if request.POST.get('form_action') == 'reorder_task':
+            return self.reorder_task(request, user, todo_list)
 
         form = TaskForm(request.POST, user=user, todo_list=todo_list)
         if form.is_valid():
@@ -314,6 +351,90 @@ class TodoListDetailView(View):
         messages.success(request, 'Задача удалена.')
         return redirect('tasks:list_detail', pk=todo_list.pk)
 
+    def archive_task(self, request, user, todo_list):
+        task = Task.objects.filter(
+            user=user,
+            todo_list=todo_list,
+            pk=request.POST.get('task_id'),
+            is_deleted=False,
+        ).first()
+        if task is None:
+            raise Http404('Задача не найдена.')
+
+        task.status = Task.Status.ARCHIVED
+        max_position = Task.objects.filter(
+            todo_list=todo_list,
+            status=Task.Status.ARCHIVED,
+            is_deleted=False,
+        ).exclude(pk=task.pk).aggregate(Max('position'))['position__max']
+        task.position = 0 if max_position is None else max_position + 1
+        task.save()
+        messages.success(request, 'Задача отправлена в архив.')
+        return redirect('tasks:list_detail', pk=todo_list.pk)
+
+    def restore_task(self, request, user, todo_list):
+        task = Task.objects.filter(
+            user=user,
+            todo_list=todo_list,
+            pk=request.POST.get('task_id'),
+            status=Task.Status.ARCHIVED,
+            is_deleted=False,
+        ).first()
+        if task is None:
+            raise Http404('Задача не найдена.')
+
+        task.status = Task.Status.QUEUE
+        max_position = Task.objects.filter(
+            todo_list=todo_list,
+            status=Task.Status.QUEUE,
+            is_deleted=False,
+        ).exclude(pk=task.pk).aggregate(Max('position'))['position__max']
+        task.position = 0 if max_position is None else max_position + 1
+        task.save()
+        messages.success(request, 'Задача восстановлена из архива.')
+        return redirect('tasks:list_detail', pk=todo_list.pk)
+
+    def reorder_task(self, request, user, todo_list):
+        task = Task.objects.filter(
+            user=user,
+            todo_list=todo_list,
+            pk=request.POST.get('task_id'),
+            is_deleted=False,
+        ).first()
+        target = Task.objects.filter(
+            user=user,
+            todo_list=todo_list,
+            pk=request.POST.get('target_task_id'),
+            is_deleted=False,
+        ).first()
+        if task is None or target is None or task.status != target.status:
+            return JsonResponse({'ok': False}, status=400)
+
+        with transaction.atomic():
+            tasks = list(
+                Task.objects.select_for_update()
+                .filter(todo_list=todo_list, status=task.status, is_deleted=False)
+                .order_by('position', '-created_at')
+            )
+            tasks = [item for item in tasks if item.pk != task.pk]
+            target_index = next(
+                (index for index, item in enumerate(tasks) if item.pk == target.pk),
+                len(tasks),
+            )
+            insert_after = request.POST.get('insert_after') == 'true'
+            if insert_after:
+                target_index += 1
+            tasks.insert(target_index, task)
+
+            for index, item in enumerate(tasks):
+                item.position = index + 100000
+            Task.objects.bulk_update(tasks, ['position'])
+            for index, item in enumerate(tasks):
+                item.position = index
+            Task.objects.bulk_update(tasks, ['position'])
+
+        return JsonResponse({'ok': True})
+
     def get_context(
         self,
         user,
@@ -324,13 +445,18 @@ class TodoListDetailView(View):
         is_edit_task_form_open=False,
         edit_task_id=None,
     ):
-        tasks = (
-            Task.objects.filter(todo_list=todo_list, user=user, is_deleted=False)
-            .order_by('status', 'position', '-created_at')
+        task_sort = self.request.GET.get('task_sort', 'position')
+        if task_sort not in self.task_sort_options:
+            task_sort = 'position'
+        tasks = Task.objects.filter(todo_list=todo_list, user=user, is_deleted=False).order_by(
+            *self.task_sort_options[task_sort]
         )
         columns = OrderedDict(
-            (status, {'label': label, 'tasks': []}) for status, label in Task.Status.choices
+            (status, {'label': label, 'tasks': []})
+            for status, label in Task.Status.choices
+            if status != Task.Status.ARCHIVED
         )
+        archived_tasks = []
         priority_matrix = OrderedDict(
             [
                 ('important_urgent', {'label': 'Важно и срочно', 'tasks': []}),
@@ -341,15 +467,18 @@ class TodoListDetailView(View):
         )
 
         for task in tasks:
-            columns[task.status]['tasks'].append(task)
-            if task.is_important and task.is_urgent:
-                priority_matrix['important_urgent']['tasks'].append(task)
-            elif task.is_important:
-                priority_matrix['important_not_urgent']['tasks'].append(task)
-            elif task.is_urgent:
-                priority_matrix['not_important_urgent']['tasks'].append(task)
+            if task.status == Task.Status.ARCHIVED:
+                archived_tasks.append(task)
             else:
-                priority_matrix['not_important_not_urgent']['tasks'].append(task)
+                columns[task.status]['tasks'].append(task)
+                if task.is_important and task.is_urgent:
+                    priority_matrix['important_urgent']['tasks'].append(task)
+                elif task.is_important:
+                    priority_matrix['important_not_urgent']['tasks'].append(task)
+                elif task.is_urgent:
+                    priority_matrix['not_important_urgent']['tasks'].append(task)
+                else:
+                    priority_matrix['not_important_not_urgent']['tasks'].append(task)
 
         return {
             'user_obj': user,
@@ -361,7 +490,13 @@ class TodoListDetailView(View):
             'is_create_task_form_open': is_create_task_form_open,
             'is_edit_task_form_open': is_edit_task_form_open,
             'edit_task_id': edit_task_id,
+            'archived_tasks': archived_tasks,
+            'task_sort': task_sort,
         }
+
+    def dispatch(self, request, *args, **kwargs):
+        self.request = request
+        return super().dispatch(request, *args, **kwargs)
 
 
 class DemoApiView(View):

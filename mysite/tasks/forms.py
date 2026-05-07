@@ -39,12 +39,11 @@ class TodoListForm(forms.ModelForm):
 
     class Meta:
         model = TodoList
-        fields = ('title', 'description', 'color', 'icon')
+        fields = ('title', 'description', 'color')
         labels = {
             'title': 'Название списка',
             'description': 'Описание',
             'color': 'Цвет',
-            'icon': 'Иконка',
         }
         widgets = {
             'title': forms.TextInput(
@@ -67,16 +66,9 @@ class TodoListForm(forms.ModelForm):
                     'type': 'color',
                 }
             ),
-            'icon': forms.TextInput(
-                attrs={
-                    'class': FORM_CONTROL_CLASS,
-                    'placeholder': 'Например: book-open',
-                }
-            ),
         }
         help_texts = {
             'color': 'Выбери цвет списка или оставь поле без изменений.',
-            'icon': 'Название иконки можно будет использовать в интерфейсе позже.',
         }
 
 

@@ -55,9 +55,20 @@
                         <h2 class="text-lg font-medium text-[#f7f1f1]">Списки задач</h2>
                         <p class="mt-1 text-sm text-[#d8cccc]">Минимальная рабочая область для текущих листов.</p>
                     </div>
-                    <button class="rounded-xl bg-[#7fc8ff] px-4 py-2 text-sm font-semibold text-[#1f1e1d] transition hover:bg-[#9bd6ff]" type="button" data-open-list-form>
-                        Добавить список
-                    </button>
+                    <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+                        <form method="get">
+                            <select class="rounded-xl border border-[#6f5a5a] bg-[#2a2020] px-3 py-2 text-sm text-[#f4eeee] focus:border-[#7fc8ff] focus:outline-none focus:ring-1 focus:ring-[#7fc8ff]" name="list_sort" onchange="this.form.submit()">
+                                <option value="position" {% if list_sort == 'position' %}selected{% endif %}>По порядку</option>
+                                <option value="title" {% if list_sort == 'title' %}selected{% endif %}>По названию</option>
+                                <option value="created" {% if list_sort == 'created' %}selected{% endif %}>Сначала новые</option>
+                                <option value="updated" {% if list_sort == 'updated' %}selected{% endif %}>Недавно обновлены</option>
+                                <option value="tasks" {% if list_sort == 'tasks' %}selected{% endif %}>По числу задач</option>
+                            </select>
+                        </form>
+                        <button class="rounded-xl bg-[#7fc8ff] px-4 py-2 text-sm font-semibold text-[#1f1e1d] transition hover:bg-[#9bd6ff]" type="button" data-open-list-form>
+                            Добавить список
+                        </button>
+                    </div>
                 </div>
 
                 <div class="grid gap-4 md:grid-cols-2">
@@ -76,11 +87,10 @@
                                             type="button"
                                             data-edit-list-button
                                             data-list-id="{{ todo_list.pk }}"
-                                            data-title="{{ todo_list.title }}"
-                                            data-description="{{ todo_list.description }}"
-                                            data-color="{{ todo_list.color }}"
-                                            data-icon="{{ todo_list.icon }}"
-                                        >Редактировать</button>
+                                    data-title="{{ todo_list.title }}"
+                                    data-description="{{ todo_list.description }}"
+                                    data-color="{{ todo_list.color }}"
+                                >Редактировать</button>
                                         <form method="post" data-delete-list-form>
                                             {% csrf_token %}
                                             <input type="hidden" name="form_action" value="delete_list">
@@ -208,7 +218,6 @@
             editListForm.elements['edit_list-title'].value = button.dataset.title || '';
             editListForm.elements['edit_list-description'].value = button.dataset.description || '';
             editListForm.elements['edit_list-color'].value = button.dataset.color || '#000000';
-            editListForm.elements['edit_list-icon'].value = button.dataset.icon || '';
             closeOptionsMenus();
             showModal(editListFormModal);
         }
