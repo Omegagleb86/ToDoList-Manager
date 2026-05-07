@@ -1,0 +1,65 @@
+{% extends "base_layout.html" %}
+{% block title %}Вход · List with Doings{% endblock title %}
+{% block content %}
+<main class="min-h-screen bg-[#1f1e1d] px-4 py-8 text-[#f4eeee] sm:px-6 lg:px-8">
+    <div class="mx-auto grid min-h-[calc(100vh-4rem)] max-w-5xl items-center gap-8 lg:grid-cols-[0.9fr_1.1fr]">
+        <section class="rounded-3xl bg-[#6a5050] p-6 shadow-2xl shadow-black/30">
+            <p class="text-sm font-medium text-[#7fc8ff]">List with Doings</p>
+            <h1 class="mt-4 text-3xl font-semibold tracking-normal text-[#fff8f8]">Войди, чтобы работать со своими списками</h1>
+            <p class="mt-4 text-sm leading-6 text-[#d8cccc]">
+                Списки и задачи теперь привязаны к аккаунту. После входа dashboard и доски покажут только твои данные.
+            </p>
+            <div class="mt-6 h-1 w-10 rounded-full bg-[#ff7ac8]"></div>
+        </section>
+
+        <section class="grid gap-4">
+            {% if messages %}
+                <div class="grid gap-2">
+                    {% for message in messages %}
+                        <div class="rounded-xl border border-[#7fc8ff]/30 bg-[#2c2424] px-4 py-3 text-sm text-[#f4eeee] {{ message.tags }}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <div class="grid gap-4 md:grid-cols-2">
+                <form method="post" class="rounded-2xl border border-[#6f5a5a] bg-[#3b2d2d] p-5 shadow-xl shadow-black/25">
+                    {% csrf_token %}
+                    <input type="hidden" name="form_action" value="login">
+                    <h2 class="text-lg font-medium text-[#fff8f8]">Вход</h2>
+                    <div class="mt-4 grid gap-4">
+                        {{ login_form.non_field_errors }}
+                        {% for field in login_form %}
+                            <div class="grid gap-2 text-sm">
+                                <label class="font-medium text-[#f4eeee]" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                                {{ field }}
+                                {% for error in field.errors %}<span class="text-sm text-[#ff9a9a]">{{ error }}</span>{% endfor %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <button class="mt-5 w-full rounded-xl bg-[#7fc8ff] px-4 py-2 text-sm font-semibold text-[#1f1e1d] hover:bg-[#9bd6ff]" type="submit">Войти</button>
+                </form>
+
+                <form method="post" class="rounded-2xl border border-[#6f5a5a] bg-[#3b2d2d] p-5 shadow-xl shadow-black/25">
+                    {% csrf_token %}
+                    <input type="hidden" name="form_action" value="register">
+                    <h2 class="text-lg font-medium text-[#fff8f8]">Регистрация</h2>
+                    <div class="mt-4 grid gap-4">
+                        {{ register_form.non_field_errors }}
+                        {% for field in register_form %}
+                            <div class="grid gap-2 text-sm">
+                                <label class="font-medium text-[#f4eeee]" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                                {{ field }}
+                                {% if field.help_text %}<span class="text-xs leading-5 text-[#bdaaaa]">{{ field.help_text }}</span>{% endif %}
+                                {% for error in field.errors %}<span class="text-sm text-[#ff9a9a]">{{ error }}</span>{% endfor %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <button class="mt-5 w-full rounded-xl bg-[#7fc8ff] px-4 py-2 text-sm font-semibold text-[#1f1e1d] hover:bg-[#9bd6ff]" type="submit">Создать аккаунт</button>
+                </form>
+            </div>
+        </section>
+    </div>
+</main>
+{% endblock content %}

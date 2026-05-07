@@ -9,9 +9,15 @@
                 <h1 class="mt-2 text-2xl font-semibold tracking-normal text-[#fff8f8]">{{ todo_list.title }}</h1>
                 <p class="mt-1 max-w-2xl text-sm text-[#cdbebe]">{{ todo_list.description|default:"Без описания" }}</p>
             </div>
-            <button class="w-full rounded-xl bg-[#7fc8ff] px-4 py-2 text-sm font-semibold text-[#1f1e1d] transition hover:bg-[#9bd6ff] sm:w-auto" type="button" data-open-task-form>
-                Добавить задачу
-            </button>
+            <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+                <button class="w-full rounded-xl bg-[#7fc8ff] px-4 py-2 text-sm font-semibold text-[#1f1e1d] transition hover:bg-[#9bd6ff] sm:w-auto" type="button" data-open-task-form>
+                    Добавить задачу
+                </button>
+                <form method="post" action="{% url 'tasks:logout' %}">
+                    {% csrf_token %}
+                    <button class="w-full rounded-xl bg-[#332828] px-4 py-2 text-sm font-medium text-[#f4eeee] hover:bg-[#463636] sm:w-auto" type="submit">Выйти</button>
+                </form>
+            </div>
         </header>
 
         {% if messages %}
@@ -42,7 +48,10 @@
                                 <article class="rounded-xl bg-[#2a2020] p-3 shadow-sm shadow-black/20">
                                     <div class="flex items-start justify-between gap-3">
                                         <div class="min-w-0">
-                                            <strong class="block truncate text-sm font-medium text-[#fff8f8]">{{ task.title }}</strong>
+                                            <div class="flex items-center gap-2">
+                                                <span class="h-3 w-3 shrink-0 rounded-full" style="background-color: {{ task.color|default:task.todo_list.color|default:'#7fc8ff' }};"></span>
+                                                <strong class="block truncate text-sm font-medium text-[#fff8f8]">{{ task.title }}</strong>
+                                            </div>
                                             <small class="mt-1 block text-xs text-[#cdbebe]">Позиция: {{ task.position }} · {{ task.priority_label }}</small>
                                         </div>
                                         <div class="relative shrink-0">
@@ -55,6 +64,7 @@
                                                     data-task-id="{{ task.pk }}"
                                                     data-title="{{ task.title }}"
                                                     data-description="{{ task.description }}"
+                                                    data-color="{{ task.color }}"
                                                     data-status="{{ task.status }}"
                                                     data-important="{{ task.is_important|yesno:'true,false' }}"
                                                     data-urgent="{{ task.is_urgent|yesno:'true,false' }}"
@@ -91,7 +101,10 @@
                                 <article class="rounded-xl bg-[#2a2020] p-3">
                                     <div class="flex items-start justify-between gap-3">
                                         <div class="min-w-0">
-                                            <strong class="block truncate text-sm font-medium text-[#fff8f8]">{{ task.title }}</strong>
+                                            <div class="flex items-center gap-2">
+                                                <span class="h-3 w-3 shrink-0 rounded-full" style="background-color: {{ task.color|default:task.todo_list.color|default:'#7fc8ff' }};"></span>
+                                                <strong class="block truncate text-sm font-medium text-[#fff8f8]">{{ task.title }}</strong>
+                                            </div>
                                             <small class="mt-1 block text-xs text-[#cdbebe]">{{ task.get_status_display }} · {{ task.todo_list.title }}</small>
                                         </div>
                                         <div class="relative shrink-0">
@@ -104,6 +117,7 @@
                                                     data-task-id="{{ task.pk }}"
                                                     data-title="{{ task.title }}"
                                                     data-description="{{ task.description }}"
+                                                    data-color="{{ task.color }}"
                                                     data-status="{{ task.status }}"
                                                     data-important="{{ task.is_important|yesno:'true,false' }}"
                                                     data-urgent="{{ task.is_urgent|yesno:'true,false' }}"
@@ -229,6 +243,7 @@
         editTaskIdInput.value = button.dataset.taskId;
         editTaskForm.elements['edit-title'].value = button.dataset.title || '';
         editTaskForm.elements['edit-description'].value = button.dataset.description || '';
+        editTaskForm.elements['edit-color'].value = button.dataset.color || '#7fc8ff';
         editTaskForm.elements['edit-status'].value = button.dataset.status || 'queue';
         editTaskForm.elements['edit-is_important'].checked = button.dataset.important === 'true';
         editTaskForm.elements['edit-is_urgent'].checked = button.dataset.urgent === 'true';

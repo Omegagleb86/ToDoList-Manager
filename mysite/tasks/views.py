@@ -1,46 +1,85 @@
 from collections import OrderedDict
 
+from django.contrib.auth import login, logout
 from django.contrib import messages
 from django.db.models import Count, Max
 from django.http import Http404, JsonResponse
 from django.shortcuts import redirect, render
 from django.views import View
 
-from .forms import TaskForm, TodoListForm
+from .forms import TaskForm, TodoAuthenticationForm, TodoListForm, TodoUserCreationForm
 from .models import Task, TodoList, TodoUser
 
 
-def get_demo_user():
-    return TodoUser.objects.order_by('id').first()
+class AuthView(View):
+    template_name = 'tasks/auth.html'
+
+    def get(self, request):
+        if request.user.is_authenticated:
+            return redirect('tasks:dashboard')
+        return render(
+            request,
+            self.template_name,
+            {
+                'login_form': TodoAuthenticationForm(request=request),
+                'register_form': TodoUserCreationForm(),
+            },
+        )
+
+    def post(self, request):
+        action = request.POST.get('form_action')
+        if action == 'register':
+            register_form = TodoUserCreationForm(request.POST)
+            login_form = TodoAuthenticationForm(request=request)
+            if register_form.is_valid():
+                user = register_form.save()
+                login(request, user)
+                messages.success(request, 'Аккаунт создан. Добро пожаловать.')
+                return redirect('tasks:dashboard')
+        else:
+            login_form = TodoAuthenticationForm(request=request, data=request.POST)
+            register_form = TodoUserCreationForm()
+            if login_form.is_valid():
+                login(request, login_form.get_user())
+                messages.success(request, 'Ты вошел в аккаунт.')
+                return redirect('tasks:dashboard')
+
+        return render(
+            request,
+            self.template_name,
+            {
+                'login_form': login_form,
+                'register_form': register_form,
+                'active_form': 'register' if action == 'register' else 'login',
+            },
+        )
+
+
+class LogoutView(View):
+    def post(self, request):
+        logout(request)
+        messages.success(request, 'Ты вышел из аккаунта.')
+        return redirect('tasks:auth')
 
 
 class DashboardView(View):
     template_name = 'tasks/dashboard.html'
 
     def get(self, request):
-        user = request.user if request.user.is_authenticated else get_demo_user()
-        if user is None:
-            return render(
-                request,
-                self.template_name,
-                {
-                    'user_obj': None,
-                    'todo_list_form': TodoListForm(),
-                    'is_create_list_form_open': False,
-                },
-            )
+        if not request.user.is_authenticated:
+            return redirect('tasks:auth')
 
         return render(
             request,
             self.template_name,
-            self.get_context(user, todo_list_form=TodoListForm(user=user)),
+            self.get_context(request.user, todo_list_form=TodoListForm(user=request.user)),
         )
 
     def post(self, request):
-        user = request.user if request.user.is_authenticated else get_demo_user()
-        if user is None:
-            messages.error(request, 'Нельзя создать список: пользователь не найден.')
-            return redirect('tasks:dashboard')
+        if not request.user.is_authenticated:
+            return redirect('tasks:auth')
+
+        user = request.user
 
         action = request.POST.get('form_action')
         if action == 'edit_list':
@@ -158,10 +197,10 @@ class TodoListDetailView(View):
     template_name = 'tasks/list_detail.html'
 
     def get(self, request, pk):
-        user = request.user if request.user.is_authenticated else get_demo_user()
-        if user is None:
-            raise Http404('Нет пользователя для демонстрации.')
+        if not request.user.is_authenticated:
+            return redirect('tasks:auth')
 
+        user = request.user
         todo_list = TodoList.objects.filter(user=user, pk=pk).first()
         if todo_list is None:
             raise Http404('Список задач не найден.')
@@ -178,10 +217,10 @@ class TodoListDetailView(View):
         )
 
     def post(self, request, pk):
-        user = request.user if request.user.is_authenticated else get_demo_user()
-        if user is None:
-            raise Http404('Нет пользователя для демонстрации.')
+        if not request.user.is_authenticated:
+            return redirect('tasks:auth')
 
+        user = request.user
         todo_list = TodoList.objects.filter(user=user, pk=pk).first()
         if todo_list is None:
             raise Http404('Список задач не найден.')
@@ -327,9 +366,10 @@ class TodoListDetailView(View):
 
 class DemoApiView(View):
     def get(self, request):
-        user = request.user if request.user.is_authenticated else get_demo_user()
-        if user is None:
-            return JsonResponse({'detail': 'No demo data yet. Run seed_demo.'}, status=404)
+        if not request.user.is_authenticated:
+            return JsonResponse({'detail': 'Authentication required.'}, status=403)
+
+        user = request.user
 
         lists_payload = []
         for todo_list in TodoList.objects.filter(user=user).order_by('position', 'title'):

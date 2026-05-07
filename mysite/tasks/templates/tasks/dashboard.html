@@ -8,11 +8,15 @@
                 <p class="text-sm font-medium text-[#7fc8ff]">List with Doings</p>
                 <h1 class="mt-2 text-2xl font-semibold tracking-normal text-[#f7f1f1]">Панель списков</h1>
             </div>
-            {% if user_obj %}
+            <div class="flex items-center gap-3">
                 <div class="rounded-xl border border-[#8a7474] bg-[#6a5050] px-4 py-2 text-sm text-[#f4eeee]">
                     {{ user_obj.username }}
                 </div>
-            {% endif %}
+                <form method="post" action="{% url 'tasks:logout' %}">
+                    {% csrf_token %}
+                    <button class="rounded-xl bg-[#332828] px-4 py-2 text-sm font-medium text-[#f4eeee] hover:bg-[#463636]" type="submit">Выйти</button>
+                </form>
+            </div>
         </header>
 
         {% if messages %}
@@ -102,7 +106,10 @@
                 <div class="grid gap-3">
                     {% for task in recent_tasks %}
                         <article class="rounded-2xl bg-[#332828] px-4 py-3 shadow-lg shadow-black/15">
-                            <strong class="text-sm font-medium text-[#fff8f8]">{{ task.title }}</strong>
+                            <div class="flex items-center gap-2">
+                                <span class="h-3 w-3 shrink-0 rounded-full" style="background-color: {{ task.color|default:task.todo_list.color|default:'#7fc8ff' }};"></span>
+                                <strong class="text-sm font-medium text-[#fff8f8]">{{ task.title }}</strong>
+                            </div>
                             <p class="mt-1 text-sm text-[#cdbebe]">{{ task.todo_list.title }} · {{ task.get_status_display }} · {{ task.priority_label }}</p>
                         </article>
                     {% empty %}

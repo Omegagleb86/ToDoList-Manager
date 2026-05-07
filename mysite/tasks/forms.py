@@ -1,6 +1,7 @@
 from django import forms
+from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 
-from .models import Task, TodoList
+from .models import Task, TodoList, TodoUser
 
 
 FORM_CONTROL_CLASS = (
@@ -125,6 +126,7 @@ class TaskForm(forms.ModelForm):
         fields = (
             'title',
             'description',
+            'color',
             'status',
             'is_important',
             'is_urgent',
@@ -134,6 +136,7 @@ class TaskForm(forms.ModelForm):
         labels = {
             'title': 'Название задачи',
             'description': 'Описание',
+            'color': 'Цвет',
             'status': 'Статус',
             'is_important': 'Важная',
             'is_urgent': 'Срочная',
@@ -152,7 +155,76 @@ class TaskForm(forms.ModelForm):
                     'rows': 4,
                 }
             ),
+            'color': forms.TextInput(
+                attrs={
+                    'class': FORM_CONTROL_CLASS + ' h-11 p-1',
+                    'placeholder': '#7fc8ff',
+                    'type': 'color',
+                }
+            ),
             'status': forms.Select(attrs={'class': FORM_CONTROL_CLASS}),
             'is_important': forms.CheckboxInput(attrs={'class': CHECKBOX_CLASS}),
             'is_urgent': forms.CheckboxInput(attrs={'class': CHECKBOX_CLASS}),
         }
+
+
+class TodoUserCreationForm(UserCreationForm):
+    class Meta:
+        model = TodoUser
+        fields = ('username', 'email')
+        labels = {
+            'username': 'Логин',
+            'email': 'Email',
+        }
+        widgets = {
+            'username': forms.TextInput(
+                attrs={
+                    'class': FORM_CONTROL_CLASS,
+                    'placeholder': 'username',
+                }
+            ),
+            'email': forms.EmailInput(
+                attrs={
+                    'class': FORM_CONTROL_CLASS,
+                    'placeholder': 'name@example.com',
+                }
+            ),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['password1'].widget.attrs.update(
+            {
+                'class': FORM_CONTROL_CLASS,
+                'placeholder': 'Пароль',
+            }
+        )
+        self.fields['password2'].widget.attrs.update(
+            {
+                'class': FORM_CONTROL_CLASS,
+                'placeholder': 'Повтори пароль',
+            }
+        )
+        self.fields['password1'].label = 'Пароль'
+        self.fields['password2'].label = 'Повтор пароля'
+
+
+class TodoAuthenticationForm(AuthenticationForm):
+    username = forms.CharField(
+        label='Логин',
+        widget=forms.TextInput(
+            attrs={
+                'class': FORM_CONTROL_CLASS,
+                'placeholder': 'username',
+            }
+        ),
+    )
+    password = forms.CharField(
+        label='Пароль',
+        widget=forms.PasswordInput(
+            attrs={
+                'class': FORM_CONTROL_CLASS,
+                'placeholder': 'Пароль',
+            }
+        ),
+    )
