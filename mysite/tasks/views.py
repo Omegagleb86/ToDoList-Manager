@@ -117,6 +117,7 @@ class TodoListDetailView(View):
                 user,
                 todo_list,
                 task_form=TaskForm(user=user, todo_list=todo_list),
+                edit_task_form=TaskForm(user=user, todo_list=todo_list, prefix='edit'),
             ),
         )
 
@@ -128,6 +129,9 @@ class TodoListDetailView(View):
         todo_list = TodoList.objects.filter(user=user, pk=pk).first()
         if todo_list is None:
             raise Http404('Список задач не найден.')
+
+        if request.POST.get('form_action') == 'edit_task':
+            return self.update_task(request, user, todo_list)
 
         form = TaskForm(request.POST, user=user, todo_list=todo_list)
         if form.is_valid():
@@ -149,11 +153,65 @@ class TodoListDetailView(View):
                 user,
                 todo_list,
                 task_form=form,
+                edit_task_form=TaskForm(user=user, todo_list=todo_list, prefix='edit'),
                 is_create_task_form_open=True,
             ),
         )
 
-    def get_context(self, user, todo_list, task_form, is_create_task_form_open=False):
+    def update_task(self, request, user, todo_list):
+        task = Task.objects.filter(
+            user=user,
+            todo_list=todo_list,
+            pk=request.POST.get('task_id'),
+            is_deleted=False,
+        ).first()
+        if task is None:
+            raise Http404('Задача не найдена.')
+
+        previous_status = task.status
+        form = TaskForm(
+            request.POST,
+            instance=task,
+            user=user,
+            todo_list=todo_list,
+            prefix='edit',
+        )
+        if form.is_valid():
+            updated_task = form.save(commit=False)
+            if updated_task.status != previous_status:
+                max_position = Task.objects.filter(
+                    todo_list=todo_list,
+                    status=updated_task.status,
+                    is_deleted=False,
+                ).exclude(pk=updated_task.pk).aggregate(Max('position'))['position__max']
+                updated_task.position = 0 if max_position is None else max_position + 1
+            updated_task.save()
+            messages.success(request, 'Задача обновлена.')
+            return redirect('tasks:list_detail', pk=todo_list.pk)
+
+        return render(
+            request,
+            self.template_name,
+            self.get_context(
+                user,
+                todo_list,
+                task_form=TaskForm(user=user, todo_list=todo_list),
+                edit_task_form=form,
+                edit_task_id=task.pk,
+                is_edit_task_form_open=True,
+            ),
+        )
+
+    def get_context(
+        self,
+        user,
+        todo_list,
+        task_form,
+        edit_task_form,
+        is_create_task_form_open=False,
+        is_edit_task_form_open=False,
+        edit_task_id=None,
+    ):
         tasks = (
             Task.objects.filter(todo_list=todo_list, user=user, is_deleted=False)
             .order_by('status', 'position', '-created_at')
@@ -187,7 +245,10 @@ class TodoListDetailView(View):
             'columns': columns,
             'priority_matrix': priority_matrix,
             'task_form': task_form,
+            'edit_task_form': edit_task_form,
             'is_create_task_form_open': is_create_task_form_open,
+            'is_edit_task_form_open': is_edit_task_form_open,
+            'edit_task_id': edit_task_id,
         }
 
 

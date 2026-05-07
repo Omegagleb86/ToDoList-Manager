@@ -75,9 +75,66 @@
             border-radius: 12px;
             padding: 12px;
             margin-bottom: 10px;
+            position: relative;
         }
         .task:last-child {
             margin-bottom: 0;
+        }
+        .task-header {
+            align-items: flex-start;
+            display: flex;
+            gap: 10px;
+            justify-content: space-between;
+        }
+        .task-options {
+            position: relative;
+        }
+        .options-button {
+            align-items: center;
+            background: transparent;
+            border: 0;
+            border-radius: 8px;
+            color: #475569;
+            cursor: pointer;
+            display: inline-flex;
+            font-size: 22px;
+            height: 28px;
+            justify-content: center;
+            line-height: 1;
+            width: 28px;
+        }
+        .options-button:hover {
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+        .options-menu {
+            background: #fff;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            box-shadow: 0 12px 30px rgba(15, 23, 42, 0.16);
+            display: none;
+            min-width: 150px;
+            padding: 6px;
+            position: absolute;
+            right: 0;
+            top: 32px;
+            z-index: 4;
+        }
+        .options-menu.is-open {
+            display: block;
+        }
+        .menu-button {
+            background: transparent;
+            border: 0;
+            border-radius: 8px;
+            cursor: pointer;
+            font: inherit;
+            padding: 8px 10px;
+            text-align: left;
+            width: 100%;
+        }
+        .menu-button:hover {
+            background: #eff6ff;
         }
         a {
             color: #2563eb;
@@ -193,7 +250,27 @@
                 <h3>{{ column.label }}</h3>
                 {% for task in column.tasks %}
                     <div class="task">
-                        <strong>{{ task.title }}</strong><br>
+                        <div class="task-header">
+                            <strong>{{ task.title }}</strong>
+                            <div class="task-options">
+                                <button class="options-button" type="button" aria-label="Опции задачи" data-options-button>&#8942;</button>
+                                <div class="options-menu" data-options-menu>
+                                    <button
+                                        class="menu-button"
+                                        type="button"
+                                        data-edit-task-button
+                                        data-task-id="{{ task.pk }}"
+                                        data-title="{{ task.title }}"
+                                        data-description="{{ task.description }}"
+                                        data-status="{{ task.status }}"
+                                        data-important="{{ task.is_important|yesno:'true,false' }}"
+                                        data-urgent="{{ task.is_urgent|yesno:'true,false' }}"
+                                        data-start-date="{{ task.start_date|date:'Y-m-d\\TH:i' }}"
+                                        data-due-date="{{ task.due_date|date:'Y-m-d\\TH:i' }}"
+                                    >Редактировать</button>
+                                </div>
+                            </div>
+                        </div>
                         <small>Позиция: {{ task.position }} · {{ task.priority_label }}</small>
                     </div>
                 {% empty %}
@@ -210,7 +287,27 @@
                 <h3>{{ section.label }}</h3>
                 {% for task in section.tasks %}
                     <div class="task">
-                        <strong>{{ task.title }}</strong><br>
+                        <div class="task-header">
+                            <strong>{{ task.title }}</strong>
+                            <div class="task-options">
+                                <button class="options-button" type="button" aria-label="Опции задачи" data-options-button>&#8942;</button>
+                                <div class="options-menu" data-options-menu>
+                                    <button
+                                        class="menu-button"
+                                        type="button"
+                                        data-edit-task-button
+                                        data-task-id="{{ task.pk }}"
+                                        data-title="{{ task.title }}"
+                                        data-description="{{ task.description }}"
+                                        data-status="{{ task.status }}"
+                                        data-important="{{ task.is_important|yesno:'true,false' }}"
+                                        data-urgent="{{ task.is_urgent|yesno:'true,false' }}"
+                                        data-start-date="{{ task.start_date|date:'Y-m-d\\TH:i' }}"
+                                        data-due-date="{{ task.due_date|date:'Y-m-d\\TH:i' }}"
+                                    >Редактировать</button>
+                                </div>
+                            </div>
+                        </div>
                         <small>{{ task.get_status_display }} · {{ task.todo_list.title }}</small>
                     </div>
                 {% empty %}
@@ -218,6 +315,44 @@
                 {% endfor %}
             </div>
         {% endfor %}
+    </div>
+</div>
+
+<div class="modal{% if is_edit_task_form_open %} is-open{% endif %}" data-edit-task-form-modal>
+    <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="edit-task-title">
+        <div class="modal-title">
+            <h2 id="edit-task-title">Редактировать задачу</h2>
+            <button class="close-button" type="button" aria-label="Закрыть форму" data-close-edit-task-form>&times;</button>
+        </div>
+        <form method="post" class="form-grid" data-edit-task-form>
+            {% csrf_token %}
+            <input type="hidden" name="form_action" value="edit_task">
+            <input type="hidden" name="task_id" value="{{ edit_task_id|default:'' }}" data-edit-task-id>
+            {{ edit_task_form.non_field_errors }}
+            {% for field in edit_task_form %}
+                {% if field.field.widget.input_type == 'checkbox' %}
+                    <div class="checkbox-field">
+                        {{ field }}
+                        {{ field.label_tag }}
+                    </div>
+                    {% for error in field.errors %}
+                        <span class="form-error">{{ error }}</span>
+                    {% endfor %}
+                {% else %}
+                    <div class="form-field">
+                        {{ field.label_tag }}
+                        {{ field }}
+                        {% for error in field.errors %}
+                            <span class="form-error">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endfor %}
+            <div class="form-actions">
+                <button class="button button-secondary" type="button" data-close-edit-task-form>Отмена</button>
+                <button class="button" type="submit">Сохранить</button>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -260,6 +395,12 @@
     const taskFormModal = document.querySelector('[data-task-form-modal]');
     const openTaskFormButton = document.querySelector('[data-open-task-form]');
     const closeTaskFormButtons = document.querySelectorAll('[data-close-task-form]');
+    const editTaskFormModal = document.querySelector('[data-edit-task-form-modal]');
+    const closeEditTaskFormButtons = document.querySelectorAll('[data-close-edit-task-form]');
+    const editTaskForm = document.querySelector('[data-edit-task-form]');
+    const editTaskIdInput = document.querySelector('[data-edit-task-id]');
+    const optionsButtons = document.querySelectorAll('[data-options-button]');
+    const editTaskButtons = document.querySelectorAll('[data-edit-task-button]');
 
     function openTaskForm() {
         taskFormModal.classList.add('is-open');
@@ -267,6 +408,29 @@
 
     function closeTaskForm() {
         taskFormModal.classList.remove('is-open');
+    }
+
+    function closeOptionsMenus() {
+        document.querySelectorAll('[data-options-menu].is-open').forEach((menu) => {
+            menu.classList.remove('is-open');
+        });
+    }
+
+    function openEditTaskForm(button) {
+        editTaskIdInput.value = button.dataset.taskId;
+        editTaskForm.elements['edit-title'].value = button.dataset.title || '';
+        editTaskForm.elements['edit-description'].value = button.dataset.description || '';
+        editTaskForm.elements['edit-status'].value = button.dataset.status || 'queue';
+        editTaskForm.elements['edit-is_important'].checked = button.dataset.important === 'true';
+        editTaskForm.elements['edit-is_urgent'].checked = button.dataset.urgent === 'true';
+        editTaskForm.elements['edit-start_date'].value = button.dataset.startDate || '';
+        editTaskForm.elements['edit-due_date'].value = button.dataset.dueDate || '';
+        closeOptionsMenus();
+        editTaskFormModal.classList.add('is-open');
+    }
+
+    function closeEditTaskForm() {
+        editTaskFormModal.classList.remove('is-open');
     }
 
     openTaskFormButton.addEventListener('click', openTaskForm);
@@ -278,5 +442,28 @@
             closeTaskForm();
         }
     });
+    closeEditTaskFormButtons.forEach((button) => {
+        button.addEventListener('click', closeEditTaskForm);
+    });
+    editTaskFormModal.addEventListener('click', (event) => {
+        if (event.target === editTaskFormModal) {
+            closeEditTaskForm();
+        }
+    });
+    optionsButtons.forEach((button) => {
+        button.addEventListener('click', (event) => {
+            event.stopPropagation();
+            const menu = button.parentElement.querySelector('[data-options-menu]');
+            const isOpen = menu.classList.contains('is-open');
+            closeOptionsMenus();
+            if (!isOpen) {
+                menu.classList.add('is-open');
+            }
+        });
+    });
+    editTaskButtons.forEach((button) => {
+        button.addEventListener('click', () => openEditTaskForm(button));
+    });
+    document.addEventListener('click', closeOptionsMenus);
 </script>
 {% endblock content %}
