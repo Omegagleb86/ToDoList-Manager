@@ -24,6 +24,41 @@
             display: grid;
             gap: 16px;
         }
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+        .button {
+            border: 0;
+            border-radius: 10px;
+            background: #2563eb;
+            color: #fff;
+            cursor: pointer;
+            font: inherit;
+            padding: 10px 16px;
+        }
+        .button-secondary {
+            background: #e5e7eb;
+            color: #111827;
+        }
+        .messages {
+            display: grid;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+        .message {
+            background: #ecfdf5;
+            border: 1px solid #a7f3d0;
+            border-radius: 10px;
+            padding: 10px 12px;
+        }
+        .message.error {
+            background: #fef2f2;
+            border-color: #fecaca;
+        }
         .stats {
             grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
             margin-bottom: 24px;
@@ -44,6 +79,82 @@
         }
         small {
             color: #6b7280;
+        }
+        .modal {
+            align-items: center;
+            background: rgba(15, 23, 42, 0.45);
+            display: none;
+            inset: 0;
+            justify-content: center;
+            padding: 20px;
+            position: fixed;
+            z-index: 10;
+        }
+        .modal.is-open {
+            display: flex;
+        }
+        .modal-panel {
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 24px 60px rgba(15, 23, 42, 0.24);
+            max-width: 520px;
+            padding: 24px;
+            width: 100%;
+        }
+        .modal-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 18px;
+        }
+        .modal-title h2 {
+            margin: 0;
+        }
+        .close-button {
+            background: transparent;
+            border: 0;
+            cursor: pointer;
+            font-size: 26px;
+            line-height: 1;
+            padding: 0;
+        }
+        .form-grid {
+            display: grid;
+            gap: 14px;
+        }
+        .form-field {
+            display: grid;
+            gap: 6px;
+        }
+        .form-field label {
+            font-weight: 700;
+        }
+        .form-control {
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            box-sizing: border-box;
+            font: inherit;
+            padding: 10px 12px;
+            width: 100%;
+        }
+        input[type="color"].form-control {
+            height: 44px;
+            padding: 4px;
+        }
+        .form-help {
+            color: #6b7280;
+            font-size: 13px;
+        }
+        .form-error {
+            color: #b91c1c;
+            font-size: 14px;
+        }
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 18px;
         }
     </style>
 {% endblock style %}
@@ -66,6 +177,14 @@
         {% endif %}
     </div>
 
+    {% if messages %}
+        <div class="messages">
+            {% for message in messages %}
+                <div class="message {{ message.tags }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
     {% if user_obj %}
         <div class="stats">
             <div class="card"><strong>{{ stats.lists }}</strong><br><small>Списков</small></div>
@@ -74,7 +193,10 @@
             <div class="card"><strong>{{ stats.done }}</strong><br><small>Выполнено</small></div>
         </div>
 
-        <h2>Списки задач</h2>
+        <div class="section-header">
+            <h2>Списки задач</h2>
+            <button class="button" type="button" data-open-list-form>Добавить список</button>
+        </div>
         <div class="lists">
             {% for todo_list in todo_lists %}
                 <div class="card">
@@ -99,4 +221,58 @@
         </div>
     {% endif %}
 </div>
+
+{% if user_obj %}
+    <div class="modal{% if is_create_list_form_open %} is-open{% endif %}" data-list-form-modal>
+        <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="create-list-title">
+            <div class="modal-title">
+                <h2 id="create-list-title">Новый список задач</h2>
+                <button class="close-button" type="button" aria-label="Закрыть форму" data-close-list-form>&times;</button>
+            </div>
+            <form method="post" class="form-grid">
+                {% csrf_token %}
+                {{ todo_list_form.non_field_errors }}
+                {% for field in todo_list_form %}
+                    <div class="form-field">
+                        {{ field.label_tag }}
+                        {{ field }}
+                        {% if field.help_text %}
+                            <span class="form-help">{{ field.help_text }}</span>
+                        {% endif %}
+                        {% for error in field.errors %}
+                            <span class="form-error">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                {% endfor %}
+                <div class="form-actions">
+                    <button class="button button-secondary" type="button" data-close-list-form>Отмена</button>
+                    <button class="button" type="submit">Создать список</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <script>
+        const listFormModal = document.querySelector('[data-list-form-modal]');
+        const openListFormButton = document.querySelector('[data-open-list-form]');
+        const closeListFormButtons = document.querySelectorAll('[data-close-list-form]');
+
+        function openListForm() {
+            listFormModal.classList.add('is-open');
+        }
+
+        function closeListForm() {
+            listFormModal.classList.remove('is-open');
+        }
+
+        openListFormButton.addEventListener('click', openListForm);
+        closeListFormButtons.forEach((button) => {
+            button.addEventListener('click', closeListForm);
+        });
+        listFormModal.addEventListener('click', (event) => {
+            if (event.target === listFormModal) {
+                closeListForm();
+            }
+        });
+    </script>
+{% endif %}
 {% endblock content %}

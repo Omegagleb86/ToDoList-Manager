@@ -1,10 +1,12 @@
 from collections import OrderedDict
 
-from django.db.models import Count
+from django.contrib import messages
+from django.db.models import Count, Max
 from django.http import Http404, JsonResponse
-from django.shortcuts import render
+from django.shortcuts import redirect, render
 from django.views import View
 
+from .forms import TodoListForm
 from .models import Task, TodoList, TodoUser
 
 
@@ -18,8 +20,50 @@ class DashboardView(View):
     def get(self, request):
         user = request.user if request.user.is_authenticated else get_demo_user()
         if user is None:
-            return render(request, self.template_name, {'user_obj': None})
+            return render(
+                request,
+                self.template_name,
+                {
+                    'user_obj': None,
+                    'todo_list_form': TodoListForm(),
+                    'is_create_list_form_open': False,
+                },
+            )
 
+        return render(
+            request,
+            self.template_name,
+            self.get_context(user, todo_list_form=TodoListForm(user=user)),
+        )
+
+    def post(self, request):
+        user = request.user if request.user.is_authenticated else get_demo_user()
+        if user is None:
+            messages.error(request, 'Нельзя создать список: пользователь не найден.')
+            return redirect('tasks:dashboard')
+
+        form = TodoListForm(request.POST, user=user)
+        if form.is_valid():
+            todo_list = form.save(commit=False)
+            max_position = TodoList.objects.filter(user=user).aggregate(Max('position'))[
+                'position__max'
+            ]
+            todo_list.position = 0 if max_position is None else max_position + 1
+            todo_list.save()
+            messages.success(request, 'Список задач создан.')
+            return redirect('tasks:dashboard')
+
+        return render(
+            request,
+            self.template_name,
+            self.get_context(
+                user,
+                todo_list_form=form,
+                is_create_list_form_open=True,
+            ),
+        )
+
+    def get_context(self, user, todo_list_form, is_create_list_form_open=False):
         todo_lists = (
             TodoList.objects.filter(user=user, is_archived=False)
             .annotate(task_count=Count('tasks'))
@@ -48,8 +92,10 @@ class DashboardView(View):
                     is_deleted=False,
                 ).count(),
             },
+            'todo_list_form': todo_list_form,
+            'is_create_list_form_open': is_create_list_form_open,
         }
-        return render(request, self.template_name, context)
+        return context
 
 
 class TodoListDetailView(View):

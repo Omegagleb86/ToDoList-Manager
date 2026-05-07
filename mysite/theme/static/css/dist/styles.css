@@ -787,6 +787,10 @@ input:where([type='file']):focus {
   position: static;
 }
 
+.fixed {
+  position: fixed;
+}
+
 .mx-auto {
   margin-left: auto;
   margin-right: auto;
@@ -826,6 +830,10 @@ input:where([type='file']):focus {
 
 .rounded-\[var\(--size\)\] {
   border-radius: var(--size);
+}
+
+.border {
+  border-width: 1px;
 }
 
 .bg-blue-200 {
