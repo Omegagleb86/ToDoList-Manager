@@ -6,7 +6,7 @@ from django.http import Http404, JsonResponse
 from django.shortcuts import redirect, render
 from django.views import View
 
-from .forms import TodoListForm
+from .forms import TaskForm, TodoListForm
 from .models import Task, TodoList, TodoUser
 
 
@@ -110,6 +110,50 @@ class TodoListDetailView(View):
         if todo_list is None:
             raise Http404('Список задач не найден.')
 
+        return render(
+            request,
+            self.template_name,
+            self.get_context(
+                user,
+                todo_list,
+                task_form=TaskForm(user=user, todo_list=todo_list),
+            ),
+        )
+
+    def post(self, request, pk):
+        user = request.user if request.user.is_authenticated else get_demo_user()
+        if user is None:
+            raise Http404('Нет пользователя для демонстрации.')
+
+        todo_list = TodoList.objects.filter(user=user, pk=pk).first()
+        if todo_list is None:
+            raise Http404('Список задач не найден.')
+
+        form = TaskForm(request.POST, user=user, todo_list=todo_list)
+        if form.is_valid():
+            task = form.save(commit=False)
+            max_position = Task.objects.filter(
+                todo_list=todo_list,
+                status=task.status,
+                is_deleted=False,
+            ).aggregate(Max('position'))['position__max']
+            task.position = 0 if max_position is None else max_position + 1
+            task.save()
+            messages.success(request, 'Задача создана.')
+            return redirect('tasks:list_detail', pk=todo_list.pk)
+
+        return render(
+            request,
+            self.template_name,
+            self.get_context(
+                user,
+                todo_list,
+                task_form=form,
+                is_create_task_form_open=True,
+            ),
+        )
+
+    def get_context(self, user, todo_list, task_form, is_create_task_form_open=False):
         tasks = (
             Task.objects.filter(todo_list=todo_list, user=user, is_deleted=False)
             .order_by('status', 'position', '-created_at')
@@ -137,16 +181,14 @@ class TodoListDetailView(View):
             else:
                 priority_matrix['not_important_not_urgent']['tasks'].append(task)
 
-        return render(
-            request,
-            self.template_name,
-            {
-                'user_obj': user,
-                'todo_list': todo_list,
-                'columns': columns,
-                'priority_matrix': priority_matrix,
-            },
-        )
+        return {
+            'user_obj': user,
+            'todo_list': todo_list,
+            'columns': columns,
+            'priority_matrix': priority_matrix,
+            'task_form': task_form,
+            'is_create_task_form_open': is_create_task_form_open,
+        }
 
 
 class DemoApiView(View):

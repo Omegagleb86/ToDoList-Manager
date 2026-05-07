@@ -1,6 +1,6 @@
 from django import forms
 
-from .models import TodoList
+from .models import Task, TodoList
 
 
 class TodoListForm(forms.ModelForm):
@@ -62,4 +62,83 @@ class TodoListForm(forms.ModelForm):
         help_texts = {
             'color': 'Выбери цвет списка или оставь поле без изменений.',
             'icon': 'Название иконки можно будет использовать в интерфейсе позже.',
+        }
+
+
+class TaskForm(forms.ModelForm):
+    start_date = forms.DateTimeField(
+        required=False,
+        label='Дата старта',
+        input_formats=['%Y-%m-%dT%H:%M'],
+        widget=forms.DateTimeInput(
+            format='%Y-%m-%dT%H:%M',
+            attrs={
+                'class': 'form-control',
+                'type': 'datetime-local',
+            },
+        ),
+    )
+    due_date = forms.DateTimeField(
+        required=False,
+        label='Дедлайн',
+        input_formats=['%Y-%m-%dT%H:%M'],
+        widget=forms.DateTimeInput(
+            format='%Y-%m-%dT%H:%M',
+            attrs={
+                'class': 'form-control',
+                'type': 'datetime-local',
+            },
+        ),
+    )
+
+    def __init__(self, *args, user=None, todo_list=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.user = user
+        self.todo_list = todo_list
+
+    def save(self, commit=True):
+        task = super().save(commit=False)
+        if self.user is not None:
+            task.user = self.user
+        if self.todo_list is not None:
+            task.todo_list = self.todo_list
+        if commit:
+            task.save()
+        return task
+
+    class Meta:
+        model = Task
+        fields = (
+            'title',
+            'description',
+            'status',
+            'is_important',
+            'is_urgent',
+            'start_date',
+            'due_date',
+        )
+        labels = {
+            'title': 'Название задачи',
+            'description': 'Описание',
+            'status': 'Статус',
+            'is_important': 'Важная',
+            'is_urgent': 'Срочная',
+        }
+        widgets = {
+            'title': forms.TextInput(
+                attrs={
+                    'class': 'form-control',
+                    'placeholder': 'Например: Подготовить отчет',
+                }
+            ),
+            'description': forms.Textarea(
+                attrs={
+                    'class': 'form-control',
+                    'placeholder': 'Добавь детали задачи',
+                    'rows': 4,
+                }
+            ),
+            'status': forms.Select(attrs={'class': 'form-control'}),
+            'is_important': forms.CheckboxInput(attrs={'class': 'form-checkbox'}),
+            'is_urgent': forms.CheckboxInput(attrs={'class': 'form-checkbox'}),
         }
