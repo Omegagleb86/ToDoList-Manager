@@ -1,414 +1,202 @@
 {% extends "base_layout.html" %}
 {% block title %}{{ todo_list.title }}{% endblock title %}
-{% block style %}
-<style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            background: #f8fafc;
-            color: #0f172a;
-        }
-        .wrapper {
-            max-width: 1300px;
-            margin: 0 auto;
-            padding: 24px 20px 48px;
-        }
-        .topbar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 16px;
-            margin-bottom: 24px;
-        }
-        .topbar-actions {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        .button {
-            border: 0;
-            border-radius: 10px;
-            background: #2563eb;
-            color: #fff;
-            cursor: pointer;
-            font: inherit;
-            padding: 10px 16px;
-        }
-        .button-secondary {
-            background: #e5e7eb;
-            color: #111827;
-        }
-        .messages {
-            display: grid;
-            gap: 8px;
-            margin-bottom: 16px;
-        }
-        .message {
-            background: #ecfdf5;
-            border: 1px solid #a7f3d0;
-            border-radius: 10px;
-            padding: 10px 12px;
-        }
-        .message.error {
-            background: #fef2f2;
-            border-color: #fecaca;
-        }
-        .board, .matrix {
-            display: grid;
-            gap: 16px;
-        }
-        .board {
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            margin-bottom: 32px;
-        }
-        .matrix {
-            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-        }
-        .column {
-            background: #ffffff;
-            border-radius: 16px;
-            padding: 16px;
-            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
-        }
-        .task {
-            background: #eef2ff;
-            border-radius: 12px;
-            padding: 12px;
-            margin-bottom: 10px;
-            position: relative;
-        }
-        .task:last-child {
-            margin-bottom: 0;
-        }
-        .task-header {
-            align-items: flex-start;
-            display: flex;
-            gap: 10px;
-            justify-content: space-between;
-        }
-        .task-options {
-            position: relative;
-        }
-        .options-button {
-            align-items: center;
-            background: transparent;
-            border: 0;
-            border-radius: 8px;
-            color: #475569;
-            cursor: pointer;
-            display: inline-flex;
-            font-size: 22px;
-            height: 28px;
-            justify-content: center;
-            line-height: 1;
-            width: 28px;
-        }
-        .options-button:hover {
-            background: #dbeafe;
-            color: #1d4ed8;
-        }
-        .options-menu {
-            background: #fff;
-            border: 1px solid #cbd5e1;
-            border-radius: 10px;
-            box-shadow: 0 12px 30px rgba(15, 23, 42, 0.16);
-            display: none;
-            min-width: 150px;
-            padding: 6px;
-            position: absolute;
-            right: 0;
-            top: 32px;
-            z-index: 4;
-        }
-        .options-menu.is-open {
-            display: block;
-        }
-        .menu-button {
-            background: transparent;
-            border: 0;
-            border-radius: 8px;
-            cursor: pointer;
-            font: inherit;
-            padding: 8px 10px;
-            text-align: left;
-            width: 100%;
-        }
-        .menu-button:hover {
-            background: #eff6ff;
-        }
-        .menu-button.danger {
-            color: #b91c1c;
-        }
-        .menu-button.danger:hover {
-            background: #fef2f2;
-        }
-        a {
-            color: #2563eb;
-            text-decoration: none;
-        }
-        small {
-            color: #64748b;
-        }
-        .modal {
-            align-items: center;
-            background: rgba(15, 23, 42, 0.45);
-            display: none;
-            inset: 0;
-            justify-content: center;
-            padding: 20px;
-            position: fixed;
-            z-index: 10;
-        }
-        .modal.is-open {
-            display: flex;
-        }
-        .modal-panel {
-            background: #fff;
-            border-radius: 16px;
-            box-shadow: 0 24px 60px rgba(15, 23, 42, 0.24);
-            max-width: 560px;
-            padding: 24px;
-            width: 100%;
-        }
-        .modal-title {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 16px;
-            margin-bottom: 18px;
-        }
-        .modal-title h2 {
-            margin: 0;
-        }
-        .close-button {
-            background: transparent;
-            border: 0;
-            cursor: pointer;
-            font-size: 26px;
-            line-height: 1;
-            padding: 0;
-        }
-        .form-grid {
-            display: grid;
-            gap: 14px;
-        }
-        .form-field {
-            display: grid;
-            gap: 6px;
-        }
-        .form-field label {
-            font-weight: 700;
-        }
-        .form-control {
-            border: 1px solid #cbd5e1;
-            border-radius: 10px;
-            box-sizing: border-box;
-            font: inherit;
-            padding: 10px 12px;
-            width: 100%;
-        }
-        .form-checkbox {
-            height: 18px;
-            width: 18px;
-        }
-        .form-error {
-            color: #b91c1c;
-            font-size: 14px;
-        }
-        .checkbox-field {
-            align-items: center;
-            display: flex;
-            gap: 10px;
-        }
-        .form-actions {
-            display: flex;
-            justify-content: flex-end;
-            gap: 10px;
-            margin-top: 18px;
-        }
-    </style>
-{% endblock style %}
 {% block content %}
-<div class="wrapper">
-    <div class="topbar">
-        <div>
-            <h1>{{ todo_list.title }}</h1>
-            <p>{{ todo_list.description|default:"Без описания" }}</p>
-        </div>
-        <div class="topbar-actions">
-            <button class="button" type="button" data-open-task-form>Добавить задачу</button>
-            <a href="{% url 'tasks:dashboard' %}">Назад к спискам</a>
-        </div>
-    </div>
+<main class="min-h-screen bg-[#1f1e1d] px-4 py-6 text-[#f4eeee] sm:px-6 lg:px-8">
+    <div class="mx-auto max-w-7xl">
+        <header class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+                <a class="text-sm font-medium text-[#7fc8ff] hover:text-[#9bd6ff]" href="{% url 'tasks:dashboard' %}">Назад к спискам</a>
+                <h1 class="mt-2 text-2xl font-semibold tracking-normal text-[#fff8f8]">{{ todo_list.title }}</h1>
+                <p class="mt-1 max-w-2xl text-sm text-[#cdbebe]">{{ todo_list.description|default:"Без описания" }}</p>
+            </div>
+            <button class="w-full rounded-xl bg-[#7fc8ff] px-4 py-2 text-sm font-semibold text-[#1f1e1d] transition hover:bg-[#9bd6ff] sm:w-auto" type="button" data-open-task-form>
+                Добавить задачу
+            </button>
+        </header>
 
-    {% if messages %}
-        <div class="messages">
-            {% for message in messages %}
-                <div class="message {{ message.tags }}">{{ message }}</div>
-            {% endfor %}
-        </div>
-    {% endif %}
-
-    <h2>Канбан-колонки</h2>
-    <div class="board">
-        {% for column in columns.values %}
-            <div class="column">
-                <h3>{{ column.label }}</h3>
-                {% for task in column.tasks %}
-                    <div class="task">
-                        <div class="task-header">
-                            <strong>{{ task.title }}</strong>
-                            <div class="task-options">
-                                <button class="options-button" type="button" aria-label="Опции задачи" data-options-button>&#8942;</button>
-                                <div class="options-menu" data-options-menu>
-                                    <button
-                                        class="menu-button"
-                                        type="button"
-                                        data-edit-task-button
-                                        data-task-id="{{ task.pk }}"
-                                        data-title="{{ task.title }}"
-                                        data-description="{{ task.description }}"
-                                        data-status="{{ task.status }}"
-                                        data-important="{{ task.is_important|yesno:'true,false' }}"
-                                        data-urgent="{{ task.is_urgent|yesno:'true,false' }}"
-                                        data-start-date="{{ task.start_date|date:'Y-m-d\\TH:i' }}"
-                                        data-due-date="{{ task.due_date|date:'Y-m-d\\TH:i' }}"
-                                    >Редактировать</button>
-                                    <form method="post" data-delete-task-form>
-                                        {% csrf_token %}
-                                        <input type="hidden" name="form_action" value="delete_task">
-                                        <input type="hidden" name="task_id" value="{{ task.pk }}">
-                                        <button class="menu-button danger" type="submit">Удалить</button>
-                                    </form>
-                                </div>
-                            </div>
-                        </div>
-                        <small>Позиция: {{ task.position }} · {{ task.priority_label }}</small>
+        {% if messages %}
+            <div class="mb-5 grid gap-2">
+                {% for message in messages %}
+                    <div class="rounded-xl border border-[#7fc8ff]/30 bg-[#2c2424] px-4 py-3 text-sm text-[#f4eeee] {{ message.tags }}">
+                        {{ message }}
                     </div>
-                {% empty %}
-                    <p><small>Нет задач в этой колонке.</small></p>
                 {% endfor %}
             </div>
-        {% endfor %}
-    </div>
+        {% endif %}
 
-    <h2>Матрица важности/срочности</h2>
-    <div class="matrix">
-        {% for section in priority_matrix.values %}
-            <div class="column">
-                <h3>{{ section.label }}</h3>
-                {% for task in section.tasks %}
-                    <div class="task">
-                        <div class="task-header">
-                            <strong>{{ task.title }}</strong>
-                            <div class="task-options">
-                                <button class="options-button" type="button" aria-label="Опции задачи" data-options-button>&#8942;</button>
-                                <div class="options-menu" data-options-menu>
-                                    <button
-                                        class="menu-button"
-                                        type="button"
-                                        data-edit-task-button
-                                        data-task-id="{{ task.pk }}"
-                                        data-title="{{ task.title }}"
-                                        data-description="{{ task.description }}"
-                                        data-status="{{ task.status }}"
-                                        data-important="{{ task.is_important|yesno:'true,false' }}"
-                                        data-urgent="{{ task.is_urgent|yesno:'true,false' }}"
-                                        data-start-date="{{ task.start_date|date:'Y-m-d\\TH:i' }}"
-                                        data-due-date="{{ task.due_date|date:'Y-m-d\\TH:i' }}"
-                                    >Редактировать</button>
-                                    <form method="post" data-delete-task-form>
-                                        {% csrf_token %}
-                                        <input type="hidden" name="form_action" value="delete_task">
-                                        <input type="hidden" name="task_id" value="{{ task.pk }}">
-                                        <button class="menu-button danger" type="submit">Удалить</button>
-                                    </form>
-                                </div>
-                            </div>
+        <section class="rounded-3xl bg-[#6a5050] p-4 shadow-2xl shadow-black/25 sm:p-6">
+            <div class="mb-4 flex items-center justify-between gap-4">
+                <h2 class="text-lg font-medium text-[#fff8f8]">Канбан-колонки</h2>
+                <span class="h-1 w-8 rounded-full "></span> 
+                {% comment %} bg-[#ff7ac8] {% endcomment %}
+            </div>
+            <div class="grid gap-4 lg:grid-cols-4">
+                {% for column in columns.values %}
+                    <div class="rounded-2xl bg-[#3d3030] p-3 shadow-lg shadow-black/20">
+                        <div class="mb-3 flex items-center justify-between gap-3">
+                            <h3 class="text-sm font-medium text-[#f7f1f1]">{{ column.label }}</h3>
+                            <span class="text-xs text-[#cdbebe]">{{ column.tasks|length }}</span>
                         </div>
-                        <small>{{ task.get_status_display }} · {{ task.todo_list.title }}</small>
+                        <div class="grid gap-2">
+                            {% for task in column.tasks %}
+                                <article class="rounded-xl bg-[#2a2020] p-3 shadow-sm shadow-black/20">
+                                    <div class="flex items-start justify-between gap-3">
+                                        <div class="min-w-0">
+                                            <strong class="block truncate text-sm font-medium text-[#fff8f8]">{{ task.title }}</strong>
+                                            <small class="mt-1 block text-xs text-[#cdbebe]">Позиция: {{ task.position }} · {{ task.priority_label }}</small>
+                                        </div>
+                                        <div class="relative shrink-0">
+                                            <button class="flex h-7 w-7 items-center justify-center rounded-lg text-xl leading-none text-[#f4eeee] transition hover:bg-[#463636]" type="button" aria-label="Опции задачи" data-options-button>&#8942;</button>
+                                            <div class="absolute right-0 top-8 z-20 hidden w-40 rounded-xl border border-[#6f5a5a] bg-[#2a2020] p-1 shadow-xl shadow-black/30" data-options-menu>
+                                                <button
+                                                    class="w-full rounded-lg px-3 py-2 text-left text-sm text-[#f4eeee] hover:bg-[#463636]"
+                                                    type="button"
+                                                    data-edit-task-button
+                                                    data-task-id="{{ task.pk }}"
+                                                    data-title="{{ task.title }}"
+                                                    data-description="{{ task.description }}"
+                                                    data-status="{{ task.status }}"
+                                                    data-important="{{ task.is_important|yesno:'true,false' }}"
+                                                    data-urgent="{{ task.is_urgent|yesno:'true,false' }}"
+                                                    data-start-date="{{ task.start_date|date:'Y-m-d\\TH:i' }}"
+                                                    data-due-date="{{ task.due_date|date:'Y-m-d\\TH:i' }}"
+                                                >Редактировать</button>
+                                                <form method="post" data-delete-task-form>
+                                                    {% csrf_token %}
+                                                    <input type="hidden" name="form_action" value="delete_task">
+                                                    <input type="hidden" name="task_id" value="{{ task.pk }}">
+                                                    <button class="w-full rounded-lg px-3 py-2 text-left text-sm text-[#ff9a9a] hover:bg-[#4b2f2f]" type="submit">Удалить</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </article>
+                            {% empty %}
+                                <p class="rounded-xl bg-[#2a2020]/60 p-3 text-sm text-[#bdaaaa]">Нет задач в этой колонке.</p>
+                            {% endfor %}
+                        </div>
                     </div>
-                {% empty %}
-                    <p><small>Нет задач в этой секции.</small></p>
                 {% endfor %}
             </div>
-        {% endfor %}
-    </div>
-</div>
+        </section>
 
-<div class="modal{% if is_edit_task_form_open %} is-open{% endif %}" data-edit-task-form-modal>
-    <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="edit-task-title">
-        <div class="modal-title">
-            <h2 id="edit-task-title">Редактировать задачу</h2>
-            <button class="close-button" type="button" aria-label="Закрыть форму" data-close-edit-task-form>&times;</button>
+        <section class="mt-8">
+            <h2 class="mb-4 text-lg font-medium text-[#fff8f8]">Матрица важности/срочности</h2>
+            <div class="grid gap-4 md:grid-cols-2">
+                {% for section in priority_matrix.values %}
+                    <div class="rounded-2xl bg-[#4b3939] p-4 shadow-lg shadow-black/20">
+                        <h3 class="mb-3 text-sm font-medium text-[#f7f1f1]">{{ section.label }}</h3>
+                        <div class="grid gap-2">
+                            {% for task in section.tasks %}
+                                <article class="rounded-xl bg-[#2a2020] p-3">
+                                    <div class="flex items-start justify-between gap-3">
+                                        <div class="min-w-0">
+                                            <strong class="block truncate text-sm font-medium text-[#fff8f8]">{{ task.title }}</strong>
+                                            <small class="mt-1 block text-xs text-[#cdbebe]">{{ task.get_status_display }} · {{ task.todo_list.title }}</small>
+                                        </div>
+                                        <div class="relative shrink-0">
+                                            <button class="flex h-7 w-7 items-center justify-center rounded-lg text-xl leading-none text-[#f4eeee] transition hover:bg-[#463636]" type="button" aria-label="Опции задачи" data-options-button>&#8942;</button>
+                                            <div class="absolute right-0 top-8 z-20 hidden w-40 rounded-xl border border-[#6f5a5a] bg-[#2a2020] p-1 shadow-xl shadow-black/30" data-options-menu>
+                                                <button
+                                                    class="w-full rounded-lg px-3 py-2 text-left text-sm text-[#f4eeee] hover:bg-[#463636]"
+                                                    type="button"
+                                                    data-edit-task-button
+                                                    data-task-id="{{ task.pk }}"
+                                                    data-title="{{ task.title }}"
+                                                    data-description="{{ task.description }}"
+                                                    data-status="{{ task.status }}"
+                                                    data-important="{{ task.is_important|yesno:'true,false' }}"
+                                                    data-urgent="{{ task.is_urgent|yesno:'true,false' }}"
+                                                    data-start-date="{{ task.start_date|date:'Y-m-d\\TH:i' }}"
+                                                    data-due-date="{{ task.due_date|date:'Y-m-d\\TH:i' }}"
+                                                >Редактировать</button>
+                                                <form method="post" data-delete-task-form>
+                                                    {% csrf_token %}
+                                                    <input type="hidden" name="form_action" value="delete_task">
+                                                    <input type="hidden" name="task_id" value="{{ task.pk }}">
+                                                    <button class="w-full rounded-lg px-3 py-2 text-left text-sm text-[#ff9a9a] hover:bg-[#4b2f2f]" type="submit">Удалить</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </article>
+                            {% empty %}
+                                <p class="rounded-xl bg-[#2a2020]/60 p-3 text-sm text-[#bdaaaa]">Нет задач в этой секции.</p>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </section>
+    </div>
+</main>
+
+<div class="{% if is_edit_task_form_open %}flex{% else %}hidden{% endif %} fixed inset-0 z-50 items-center justify-center bg-black/55 p-4" data-edit-task-form-modal>
+    <div class="w-full max-w-lg rounded-2xl border border-[#6f5a5a] bg-[#3b2d2d] p-5 shadow-2xl shadow-black/40" role="dialog" aria-modal="true" aria-labelledby="edit-task-title">
+        <div class="mb-5 flex items-center justify-between gap-4">
+            <h2 id="edit-task-title" class="text-lg font-medium text-[#fff8f8]">Редактировать задачу</h2>
+            <button class="text-2xl leading-none text-[#cdbebe] hover:text-white" type="button" aria-label="Закрыть форму" data-close-edit-task-form>&times;</button>
         </div>
-        <form method="post" class="form-grid" data-edit-task-form>
+        <form method="post" class="grid gap-4" data-edit-task-form>
             {% csrf_token %}
             <input type="hidden" name="form_action" value="edit_task">
             <input type="hidden" name="task_id" value="{{ edit_task_id|default:'' }}" data-edit-task-id>
             {{ edit_task_form.non_field_errors }}
             {% for field in edit_task_form %}
                 {% if field.field.widget.input_type == 'checkbox' %}
-                    <div class="checkbox-field">
+                    <div class="flex items-center gap-3 text-sm text-[#f4eeee]">
                         {{ field }}
-                        {{ field.label_tag }}
+                        <label class="font-medium" for="{{ field.id_for_label }}">{{ field.label }}</label>
                     </div>
-                    {% for error in field.errors %}
-                        <span class="form-error">{{ error }}</span>
-                    {% endfor %}
+                    {% for error in field.errors %}<span class="text-sm text-[#ff9a9a]">{{ error }}</span>{% endfor %}
                 {% else %}
-                    <div class="form-field">
-                        {{ field.label_tag }}
+                    <div class="grid gap-2 text-sm">
+                        <label class="font-medium text-[#f4eeee]" for="{{ field.id_for_label }}">{{ field.label }}</label>
                         {{ field }}
-                        {% for error in field.errors %}
-                            <span class="form-error">{{ error }}</span>
-                        {% endfor %}
+                        {% for error in field.errors %}<span class="text-sm text-[#ff9a9a]">{{ error }}</span>{% endfor %}
                     </div>
                 {% endif %}
             {% endfor %}
-            <div class="form-actions">
-                <button class="button button-secondary" type="button" data-close-edit-task-form>Отмена</button>
-                <button class="button" type="submit">Сохранить</button>
+            <div class="mt-2 flex justify-end gap-2">
+                <button class="rounded-xl bg-[#5b4545] px-4 py-2 text-sm font-medium text-[#f4eeee] hover:bg-[#6a5050]" type="button" data-close-edit-task-form>Отмена</button>
+                <button class="rounded-xl bg-[#7fc8ff] px-4 py-2 text-sm font-semibold text-[#1f1e1d] hover:bg-[#9bd6ff]" type="submit">Сохранить</button>
             </div>
         </form>
     </div>
 </div>
 
-<div class="modal{% if is_create_task_form_open %} is-open{% endif %}" data-task-form-modal>
-    <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="create-task-title">
-        <div class="modal-title">
-            <h2 id="create-task-title">Новая задача</h2>
-            <button class="close-button" type="button" aria-label="Закрыть форму" data-close-task-form>&times;</button>
+<div class="{% if is_create_task_form_open %}flex{% else %}hidden{% endif %} fixed inset-0 z-50 items-center justify-center bg-black/55 p-4" data-task-form-modal>
+    <div class="w-full max-w-lg rounded-2xl border border-[#6f5a5a] bg-[#3b2d2d] p-5 shadow-2xl shadow-black/40" role="dialog" aria-modal="true" aria-labelledby="create-task-title">
+        <div class="mb-5 flex items-center justify-between gap-4">
+            <h2 id="create-task-title" class="text-lg font-medium text-[#fff8f8]">Новая задача</h2>
+            <button class="text-2xl leading-none text-[#cdbebe] hover:text-white" type="button" aria-label="Закрыть форму" data-close-task-form>&times;</button>
         </div>
-        <form method="post" class="form-grid">
+        <form method="post" class="grid gap-4">
             {% csrf_token %}
             {{ task_form.non_field_errors }}
             {% for field in task_form %}
                 {% if field.field.widget.input_type == 'checkbox' %}
-                    <div class="checkbox-field">
+                    <div class="flex items-center gap-3 text-sm text-[#f4eeee]">
                         {{ field }}
-                        {{ field.label_tag }}
+                        <label class="font-medium" for="{{ field.id_for_label }}">{{ field.label }}</label>
                     </div>
-                    {% for error in field.errors %}
-                        <span class="form-error">{{ error }}</span>
-                    {% endfor %}
+                    {% for error in field.errors %}<span class="text-sm text-[#ff9a9a]">{{ error }}</span>{% endfor %}
                 {% else %}
-                    <div class="form-field">
-                        {{ field.label_tag }}
+                    <div class="grid gap-2 text-sm">
+                        <label class="font-medium text-[#f4eeee]" for="{{ field.id_for_label }}">{{ field.label }}</label>
                         {{ field }}
-                        {% for error in field.errors %}
-                            <span class="form-error">{{ error }}</span>
-                        {% endfor %}
+                        {% for error in field.errors %}<span class="text-sm text-[#ff9a9a]">{{ error }}</span>{% endfor %}
                     </div>
                 {% endif %}
             {% endfor %}
-            <div class="form-actions">
-                <button class="button button-secondary" type="button" data-close-task-form>Отмена</button>
-                <button class="button" type="submit">Создать задачу</button>
+            <div class="mt-2 flex justify-end gap-2">
+                <button class="rounded-xl bg-[#5b4545] px-4 py-2 text-sm font-medium text-[#f4eeee] hover:bg-[#6a5050]" type="button" data-close-task-form>Отмена</button>
+                <button class="rounded-xl bg-[#7fc8ff] px-4 py-2 text-sm font-semibold text-[#1f1e1d] hover:bg-[#9bd6ff]" type="submit">Создать задачу</button>
             </div>
         </form>
     </div>
 </div>
+
 <script>
     const taskFormModal = document.querySelector('[data-task-form-modal]');
     const openTaskFormButton = document.querySelector('[data-open-task-form]');
@@ -421,17 +209,19 @@
     const editTaskButtons = document.querySelectorAll('[data-edit-task-button]');
     const deleteTaskForms = document.querySelectorAll('[data-delete-task-form]');
 
-    function openTaskForm() {
-        taskFormModal.classList.add('is-open');
+    function showModal(modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
     }
 
-    function closeTaskForm() {
-        taskFormModal.classList.remove('is-open');
+    function hideModal(modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
     }
 
     function closeOptionsMenus() {
-        document.querySelectorAll('[data-options-menu].is-open').forEach((menu) => {
-            menu.classList.remove('is-open');
+        document.querySelectorAll('[data-options-menu]').forEach((menu) => {
+            menu.classList.add('hidden');
         });
     }
 
@@ -445,38 +235,34 @@
         editTaskForm.elements['edit-start_date'].value = button.dataset.startDate || '';
         editTaskForm.elements['edit-due_date'].value = button.dataset.dueDate || '';
         closeOptionsMenus();
-        editTaskFormModal.classList.add('is-open');
+        showModal(editTaskFormModal);
     }
 
-    function closeEditTaskForm() {
-        editTaskFormModal.classList.remove('is-open');
-    }
-
-    openTaskFormButton.addEventListener('click', openTaskForm);
+    openTaskFormButton.addEventListener('click', () => showModal(taskFormModal));
     closeTaskFormButtons.forEach((button) => {
-        button.addEventListener('click', closeTaskForm);
+        button.addEventListener('click', () => hideModal(taskFormModal));
     });
     taskFormModal.addEventListener('click', (event) => {
         if (event.target === taskFormModal) {
-            closeTaskForm();
+            hideModal(taskFormModal);
         }
     });
     closeEditTaskFormButtons.forEach((button) => {
-        button.addEventListener('click', closeEditTaskForm);
+        button.addEventListener('click', () => hideModal(editTaskFormModal));
     });
     editTaskFormModal.addEventListener('click', (event) => {
         if (event.target === editTaskFormModal) {
-            closeEditTaskForm();
+            hideModal(editTaskFormModal);
         }
     });
     optionsButtons.forEach((button) => {
         button.addEventListener('click', (event) => {
             event.stopPropagation();
             const menu = button.parentElement.querySelector('[data-options-menu]');
-            const isOpen = menu.classList.contains('is-open');
+            const wasHidden = menu.classList.contains('hidden');
             closeOptionsMenus();
-            if (!isOpen) {
-                menu.classList.add('is-open');
+            if (wasHidden) {
+                menu.classList.remove('hidden');
             }
         });
     });

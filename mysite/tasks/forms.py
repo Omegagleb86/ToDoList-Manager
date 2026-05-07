@@ -3,6 +3,17 @@ from django import forms
 from .models import Task, TodoList
 
 
+FORM_CONTROL_CLASS = (
+    'w-full rounded-lg border border-[#6f5a5a] bg-[#2a2020] px-3 py-2 text-sm '
+    'text-[#f4eeee] placeholder:text-[#a99797] shadow-sm '
+    'focus:border-[#7fc8ff] focus:outline-none focus:ring-1 focus:ring-[#7fc8ff]'
+)
+CHECKBOX_CLASS = (
+    'h-4 w-4 rounded border-[#6f5a5a] bg-[#2a2020] text-[#7fc8ff] '
+    'focus:ring-[#7fc8ff] focus:ring-offset-[#3b2d2d]'
+)
+
+
 class TodoListForm(forms.ModelForm):
     def __init__(self, *args, user=None, **kwargs):
         super().__init__(*args, **kwargs)
@@ -37,27 +48,27 @@ class TodoListForm(forms.ModelForm):
         widgets = {
             'title': forms.TextInput(
                 attrs={
-                    'class': 'form-control',
+                    'class': FORM_CONTROL_CLASS,
                     'placeholder': 'Например: Учебная практика',
                 }
             ),
             'description': forms.Textarea(
                 attrs={
-                    'class': 'form-control',
+                    'class': FORM_CONTROL_CLASS,
                     'placeholder': 'Кратко опиши, для чего нужен этот список',
                     'rows': 4,
                 }
             ),
             'color': forms.TextInput(
                 attrs={
-                    'class': 'form-control',
+                    'class': FORM_CONTROL_CLASS + ' h-11 p-1',
                     'placeholder': '#2563eb',
                     'type': 'color',
                 }
             ),
             'icon': forms.TextInput(
                 attrs={
-                    'class': 'form-control',
+                    'class': FORM_CONTROL_CLASS,
                     'placeholder': 'Например: book-open',
                 }
             ),
@@ -76,7 +87,7 @@ class TaskForm(forms.ModelForm):
         widget=forms.DateTimeInput(
             format='%Y-%m-%dT%H:%M',
             attrs={
-                'class': 'form-control',
+                'class': FORM_CONTROL_CLASS,
                 'type': 'datetime-local',
             },
         ),
@@ -88,7 +99,7 @@ class TaskForm(forms.ModelForm):
         widget=forms.DateTimeInput(
             format='%Y-%m-%dT%H:%M',
             attrs={
-                'class': 'form-control',
+                'class': FORM_CONTROL_CLASS,
                 'type': 'datetime-local',
             },
         ),
@@ -130,18 +141,18 @@ class TaskForm(forms.ModelForm):
         widgets = {
             'title': forms.TextInput(
                 attrs={
-                    'class': 'form-control',
+                    'class': FORM_CONTROL_CLASS,
                     'placeholder': 'Например: Подготовить отчет',
                 }
             ),
             'description': forms.Textarea(
                 attrs={
-                    'class': 'form-control',
+                    'class': FORM_CONTROL_CLASS,
                     'placeholder': 'Добавь детали задачи',
                     'rows': 4,
                 }
             ),
-            'status': forms.Select(attrs={'class': 'form-control'}),
-            'is_important': forms.CheckboxInput(attrs={'class': 'form-checkbox'}),
-            'is_urgent': forms.CheckboxInput(attrs={'class': 'form-checkbox'}),
+            'status': forms.Select(attrs={'class': FORM_CONTROL_CLASS}),
+            'is_important': forms.CheckboxInput(attrs={'class': CHECKBOX_CLASS}),
+            'is_urgent': forms.CheckboxInput(attrs={'class': CHECKBOX_CLASS}),
         }

@@ -1,369 +1,169 @@
 {% extends "base_layout.html" %}
-{% load tailwind_tags %}
-{% block title %}ToDoList Backend Demo{% endblock title %}
-{% block style %}
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            background: #f4f7fb;
-            color: #1f2937;
-        }
-        .wrapper {
-            max-width: 1100px;
-            margin: 0 auto;
-            padding: 32px 20px 48px;
-        }
-        .hero {
-            background: linear-gradient(135deg, #dbeafe, #eff6ff);
-            border-radius: 20px;
-            padding: 24px;
-            margin-bottom: 24px;
-        }
-        .stats, .lists, .recent {
-            display: grid;
-            gap: 16px;
-        }
-        .section-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 16px;
-            margin-bottom: 16px;
-        }
-        .button {
-            border: 0;
-            border-radius: 10px;
-            background: #2563eb;
-            color: #fff;
-            cursor: pointer;
-            font: inherit;
-            padding: 10px 16px;
-        }
-        .button-secondary {
-            background: #e5e7eb;
-            color: #111827;
-        }
-        .messages {
-            display: grid;
-            gap: 8px;
-            margin-bottom: 16px;
-        }
-        .message {
-            background: #ecfdf5;
-            border: 1px solid #a7f3d0;
-            border-radius: 10px;
-            padding: 10px 12px;
-        }
-        .message.error {
-            background: #fef2f2;
-            border-color: #fecaca;
-        }
-        .stats {
-            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-            margin-bottom: 24px;
-        }
-        .card {
-            background: #fff;
-            border-radius: 16px;
-            padding: 18px;
-            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
-            position: relative;
-        }
-        .card-header {
-            align-items: flex-start;
-            display: flex;
-            gap: 10px;
-            justify-content: space-between;
-        }
-        .list-options {
-            position: relative;
-        }
-        .options-button {
-            align-items: center;
-            background: transparent;
-            border: 0;
-            border-radius: 8px;
-            color: #475569;
-            cursor: pointer;
-            display: inline-flex;
-            font-size: 22px;
-            height: 28px;
-            justify-content: center;
-            line-height: 1;
-            width: 28px;
-        }
-        .options-button:hover {
-            background: #dbeafe;
-            color: #1d4ed8;
-        }
-        .options-menu {
-            background: #fff;
-            border: 1px solid #cbd5e1;
-            border-radius: 10px;
-            box-shadow: 0 12px 30px rgba(15, 23, 42, 0.16);
-            display: none;
-            min-width: 150px;
-            padding: 6px;
-            position: absolute;
-            right: 0;
-            top: 32px;
-            z-index: 4;
-        }
-        .options-menu.is-open {
-            display: block;
-        }
-        .menu-button {
-            background: transparent;
-            border: 0;
-            border-radius: 8px;
-            cursor: pointer;
-            font: inherit;
-            padding: 8px 10px;
-            text-align: left;
-            width: 100%;
-        }
-        .menu-button:hover {
-            background: #eff6ff;
-        }
-        .menu-button.danger {
-            color: #b91c1c;
-        }
-        .menu-button.danger:hover {
-            background: #fef2f2;
-        }
-        .lists {
-            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-            margin-bottom: 24px;
-        }
-        a {
-            color: #2563eb;
-            text-decoration: none;
-        }
-        small {
-            color: #6b7280;
-        }
-        .modal {
-            align-items: center;
-            background: rgba(15, 23, 42, 0.45);
-            display: none;
-            inset: 0;
-            justify-content: center;
-            padding: 20px;
-            position: fixed;
-            z-index: 10;
-        }
-        .modal.is-open {
-            display: flex;
-        }
-        .modal-panel {
-            background: #fff;
-            border-radius: 16px;
-            box-shadow: 0 24px 60px rgba(15, 23, 42, 0.24);
-            max-width: 520px;
-            padding: 24px;
-            width: 100%;
-        }
-        .modal-title {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 16px;
-            margin-bottom: 18px;
-        }
-        .modal-title h2 {
-            margin: 0;
-        }
-        .close-button {
-            background: transparent;
-            border: 0;
-            cursor: pointer;
-            font-size: 26px;
-            line-height: 1;
-            padding: 0;
-        }
-        .form-grid {
-            display: grid;
-            gap: 14px;
-        }
-        .form-field {
-            display: grid;
-            gap: 6px;
-        }
-        .form-field label {
-            font-weight: 700;
-        }
-        .form-control {
-            border: 1px solid #cbd5e1;
-            border-radius: 10px;
-            box-sizing: border-box;
-            font: inherit;
-            padding: 10px 12px;
-            width: 100%;
-        }
-        input[type="color"].form-control {
-            height: 44px;
-            padding: 4px;
-        }
-        .form-help {
-            color: #6b7280;
-            font-size: 13px;
-        }
-        .form-error {
-            color: #b91c1c;
-            font-size: 14px;
-        }
-        .form-actions {
-            display: flex;
-            justify-content: flex-end;
-            gap: 10px;
-            margin-top: 18px;
-        }
-    </style>
-{% endblock style %}
+{% block title %}List with Doings{% endblock title %}
 {% block content %}
-    <article class="[--size:20px] ml-40 bg-blue-200 rounded-[var(--size)]">
-        <h1>ToDoList Backend Demo</h1>
-        <p>Простой бэкенд для управления списками задач. Использует Django и Django REST Framework.</p>
-    </article>
-<div class="wrapper">
-    <div class="hero">
-        <h1>ToDoList backend demo</h1>
+<main class="min-h-screen bg-[#1f1e1d] px-4 py-6 text-[#f4eeee] sm:px-6 lg:px-8">
+    <div class="mx-auto max-w-6xl">
+        <header class="mb-8 flex items-center justify-between">
+            <div>
+                <p class="text-sm font-medium text-[#7fc8ff]">List with Doings</p>
+                <h1 class="mt-2 text-2xl font-semibold tracking-normal text-[#f7f1f1]">Панель списков</h1>
+            </div>
+            {% if user_obj %}
+                <div class="rounded-xl border border-[#8a7474] bg-[#6a5050] px-4 py-2 text-sm text-[#f4eeee]">
+                    {{ user_obj.username }}
+                </div>
+            {% endif %}
+        </header>
+
+        {% if messages %}
+            <div class="mb-5 grid gap-2">
+                {% for message in messages %}
+                    <div class="rounded-xl border border-[#7fc8ff]/30 bg-[#2c2424] px-4 py-3 text-sm text-[#f4eeee] {{ message.tags }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
         {% if user_obj %}
-            <p>Текущий пользователь: <strong>{{ user_obj.username }}</strong></p>
-            <p>
-                Открыть <a href="/admin/">админку</a> или
-                <a href="{% url 'tasks:demo_api' %}">JSON-представление</a>.
-            </p>
+            <section class="mb-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <div class="rounded-2xl bg-[#4b3939] p-4 shadow-lg shadow-black/20">
+                    <strong class="text-2xl font-semibold">{{ stats.lists }}</strong>
+                    <p class="mt-1 text-sm text-[#cdbebe]">Списков</p>
+                </div>
+                <div class="rounded-2xl bg-[#4b3939] p-4 shadow-lg shadow-black/20">
+                    <strong class="text-2xl font-semibold">{{ stats.tasks }}</strong>
+                    <p class="mt-1 text-sm text-[#cdbebe]">Активных задач</p>
+                </div>
+                <div class="rounded-2xl bg-[#4b3939] p-4 shadow-lg shadow-black/20">
+                    <strong class="text-2xl font-semibold">{{ stats.in_progress }}</strong>
+                    <p class="mt-1 text-sm text-[#cdbebe]">В работе</p>
+                </div>
+                <div class="rounded-2xl bg-[#4b3939] p-4 shadow-lg shadow-black/20">
+                    <strong class="text-2xl font-semibold">{{ stats.done }}</strong>
+                    <p class="mt-1 text-sm text-[#cdbebe]">Выполнено</p>
+                </div>
+            </section>
+
+            <section class="rounded-3xl bg-[#6a5050] p-4 shadow-2xl shadow-black/25 sm:p-6">
+                <div class="mb-5 flex items-center justify-between gap-4">
+                    <div>
+                        <h2 class="text-lg font-medium text-[#f7f1f1]">Списки задач</h2>
+                        <p class="mt-1 text-sm text-[#d8cccc]">Минимальная рабочая область для текущих листов.</p>
+                    </div>
+                    <button class="rounded-xl bg-[#7fc8ff] px-4 py-2 text-sm font-semibold text-[#1f1e1d] transition hover:bg-[#9bd6ff]" type="button" data-open-list-form>
+                        Добавить список
+                    </button>
+                </div>
+
+                <div class="grid gap-4 md:grid-cols-2">
+                    {% for todo_list in todo_lists %}
+                        <article class="relative rounded-2xl bg-[#463636] p-4 shadow-lg shadow-black/20">
+                            <div class="flex items-start justify-between gap-3">
+                                <div class="min-w-0">
+                                    <h3 class="truncate text-base font-medium text-[#fff8f8]">{{ todo_list.title }}</h3>
+                                    <p class="mt-2 line-clamp-2 text-sm text-[#cdbebe]">{{ todo_list.description|default:"Без описания" }}</p>
+                                </div>
+                                <div class="relative shrink-0">
+                                    <button class="flex h-8 w-8 items-center justify-center rounded-lg text-xl leading-none text-[#f4eeee] transition hover:bg-[#5b4545]" type="button" aria-label="Опции списка" data-options-button>&#8942;</button>
+                                    <div class="absolute right-0 top-9 z-20 hidden w-40 rounded-xl border border-[#6f5a5a] bg-[#2a2020] p-1 shadow-xl shadow-black/30" data-options-menu>
+                                        <button
+                                            class="w-full rounded-lg px-3 py-2 text-left text-sm text-[#f4eeee] hover:bg-[#463636]"
+                                            type="button"
+                                            data-edit-list-button
+                                            data-list-id="{{ todo_list.pk }}"
+                                            data-title="{{ todo_list.title }}"
+                                            data-description="{{ todo_list.description }}"
+                                            data-color="{{ todo_list.color }}"
+                                            data-icon="{{ todo_list.icon }}"
+                                        >Редактировать</button>
+                                        <form method="post" data-delete-list-form>
+                                            {% csrf_token %}
+                                            <input type="hidden" name="form_action" value="delete_list">
+                                            <input type="hidden" name="list_id" value="{{ todo_list.pk }}">
+                                            <button class="w-full rounded-lg px-3 py-2 text-left text-sm text-[#ff9a9a] hover:bg-[#4b2f2f]" type="submit">Удалить</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-4 flex items-center justify-between gap-3 text-sm">
+                                <span class="text-[#cdbebe]">Задач: {{ todo_list.task_count }}</span>
+                                <a class="font-medium text-[#7fc8ff] hover:text-[#9bd6ff]" href="{% url 'tasks:list_detail' todo_list.pk %}">Открыть</a>
+                            </div>
+                        </article>
+                    {% empty %}
+                        <div class="rounded-2xl bg-[#463636] p-5 text-sm text-[#cdbebe]">Пока нет списков.</div>
+                    {% endfor %}
+                </div>
+            </section>
+
+            <section class="mt-8">
+                <h2 class="mb-4 text-lg font-medium text-[#f7f1f1]">Недавние задачи</h2>
+                <div class="grid gap-3">
+                    {% for task in recent_tasks %}
+                        <article class="rounded-2xl bg-[#332828] px-4 py-3 shadow-lg shadow-black/15">
+                            <strong class="text-sm font-medium text-[#fff8f8]">{{ task.title }}</strong>
+                            <p class="mt-1 text-sm text-[#cdbebe]">{{ task.todo_list.title }} · {{ task.get_status_display }} · {{ task.priority_label }}</p>
+                        </article>
+                    {% empty %}
+                        <div class="rounded-2xl bg-[#332828] px-4 py-3 text-sm text-[#cdbebe]">Пока нет задач.</div>
+                    {% endfor %}
+                </div>
+            </section>
         {% else %}
-            <p>Демо-данные пока не созданы. Выполни команду <code>seed_demo</code>.</p>
+            <div class="rounded-2xl bg-[#4b3939] p-5 text-[#cdbebe]">Демо-данные пока не созданы. Выполни команду <code>seed_demo</code>.</div>
         {% endif %}
     </div>
-
-    {% if messages %}
-        <div class="messages">
-            {% for message in messages %}
-                <div class="message {{ message.tags }}">{{ message }}</div>
-            {% endfor %}
-        </div>
-    {% endif %}
-
-    {% if user_obj %}
-        <div class="stats">
-            <div class="card"><strong>{{ stats.lists }}</strong><br><small>Списков</small></div>
-            <div class="card"><strong>{{ stats.tasks }}</strong><br><small>Активных задач</small></div>
-            <div class="card"><strong>{{ stats.in_progress }}</strong><br><small>В работе</small></div>
-            <div class="card"><strong>{{ stats.done }}</strong><br><small>Выполнено</small></div>
-        </div>
-
-        <div class="section-header">
-            <h2>Списки задач</h2>
-            <button class="button" type="button" data-open-list-form>Добавить список</button>
-        </div>
-        <div class="lists">
-            {% for todo_list in todo_lists %}
-                <div class="card">
-                    <div class="card-header">
-                        <h3>{{ todo_list.title }}</h3>
-                        <div class="list-options">
-                            <button class="options-button" type="button" aria-label="Опции списка" data-options-button>&#8942;</button>
-                            <div class="options-menu" data-options-menu>
-                                <button
-                                    class="menu-button"
-                                    type="button"
-                                    data-edit-list-button
-                                    data-list-id="{{ todo_list.pk }}"
-                                    data-title="{{ todo_list.title }}"
-                                    data-description="{{ todo_list.description }}"
-                                    data-color="{{ todo_list.color }}"
-                                    data-icon="{{ todo_list.icon }}"
-                                >Редактировать</button>
-                                <form method="post" data-delete-list-form>
-                                    {% csrf_token %}
-                                    <input type="hidden" name="form_action" value="delete_list">
-                                    <input type="hidden" name="list_id" value="{{ todo_list.pk }}">
-                                    <button class="menu-button danger" type="submit">Удалить</button>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                    <p>{{ todo_list.description|default:"Без описания" }}</p>
-                    <p><small>Задач: {{ todo_list.task_count }}</small></p>
-                    <a href="{% url 'tasks:list_detail' todo_list.pk %}">Открыть доску</a>
-                </div>
-            {% endfor %}
-        </div>
-
-        <h2>Недавние задачи</h2>
-        <div class="recent">
-            {% for task in recent_tasks %}
-                <div class="card">
-                    <strong>{{ task.title }}</strong>
-                    <p>{{ task.todo_list.title }} · {{ task.get_status_display }} · {{ task.priority_label }}</p>
-                </div>
-            {% empty %}
-                <div class="card">Пока нет задач.</div>
-            {% endfor %}
-        </div>
-    {% endif %}
-</div>
+</main>
 
 {% if user_obj %}
-    <div class="modal{% if is_edit_list_form_open %} is-open{% endif %}" data-edit-list-form-modal>
-        <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="edit-list-title">
-            <div class="modal-title">
-                <h2 id="edit-list-title">Редактировать список</h2>
-                <button class="close-button" type="button" aria-label="Закрыть форму" data-close-edit-list-form>&times;</button>
+    <div class="{% if is_edit_list_form_open %}flex{% else %}hidden{% endif %} fixed inset-0 z-50 items-center justify-center bg-black/55 p-4" data-edit-list-form-modal>
+        <div class="w-full max-w-lg rounded-2xl border border-[#6f5a5a] bg-[#3b2d2d] p-5 shadow-2xl shadow-black/40" role="dialog" aria-modal="true" aria-labelledby="edit-list-title">
+            <div class="mb-5 flex items-center justify-between gap-4">
+                <h2 id="edit-list-title" class="text-lg font-medium text-[#fff8f8]">Редактировать список</h2>
+                <button class="text-2xl leading-none text-[#cdbebe] hover:text-white" type="button" aria-label="Закрыть форму" data-close-edit-list-form>&times;</button>
             </div>
-            <form method="post" class="form-grid" data-edit-list-form>
+            <form method="post" class="grid gap-4" data-edit-list-form>
                 {% csrf_token %}
                 <input type="hidden" name="form_action" value="edit_list">
                 <input type="hidden" name="list_id" value="{{ edit_todo_list_id|default:'' }}" data-edit-list-id>
                 {{ edit_todo_list_form.non_field_errors }}
                 {% for field in edit_todo_list_form %}
-                    <div class="form-field">
-                        {{ field.label_tag }}
+                    <div class="grid gap-2 text-sm">
+                        <label class="font-medium text-[#f4eeee]" for="{{ field.id_for_label }}">{{ field.label }}</label>
                         {{ field }}
-                        {% if field.help_text %}
-                            <span class="form-help">{{ field.help_text }}</span>
-                        {% endif %}
-                        {% for error in field.errors %}
-                            <span class="form-error">{{ error }}</span>
-                        {% endfor %}
+                        {% if field.help_text %}<span class="text-xs text-[#bdaaaa]">{{ field.help_text }}</span>{% endif %}
+                        {% for error in field.errors %}<span class="text-sm text-[#ff9a9a]">{{ error }}</span>{% endfor %}
                     </div>
                 {% endfor %}
-                <div class="form-actions">
-                    <button class="button button-secondary" type="button" data-close-edit-list-form>Отмена</button>
-                    <button class="button" type="submit">Сохранить</button>
+                <div class="mt-2 flex justify-end gap-2">
+                    <button class="rounded-xl bg-[#5b4545] px-4 py-2 text-sm font-medium text-[#f4eeee] hover:bg-[#6a5050]" type="button" data-close-edit-list-form>Отмена</button>
+                    <button class="rounded-xl bg-[#7fc8ff] px-4 py-2 text-sm font-semibold text-[#1f1e1d] hover:bg-[#9bd6ff]" type="submit">Сохранить</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <div class="modal{% if is_create_list_form_open %} is-open{% endif %}" data-list-form-modal>
-        <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="create-list-title">
-            <div class="modal-title">
-                <h2 id="create-list-title">Новый список задач</h2>
-                <button class="close-button" type="button" aria-label="Закрыть форму" data-close-list-form>&times;</button>
+    <div class="{% if is_create_list_form_open %}flex{% else %}hidden{% endif %} fixed inset-0 z-50 items-center justify-center bg-black/55 p-4" data-list-form-modal>
+        <div class="w-full max-w-lg rounded-2xl border border-[#6f5a5a] bg-[#3b2d2d] p-5 shadow-2xl shadow-black/40" role="dialog" aria-modal="true" aria-labelledby="create-list-title">
+            <div class="mb-5 flex items-center justify-between gap-4">
+                <h2 id="create-list-title" class="text-lg font-medium text-[#fff8f8]">Новый список задач</h2>
+                <button class="text-2xl leading-none text-[#cdbebe] hover:text-white" type="button" aria-label="Закрыть форму" data-close-list-form>&times;</button>
             </div>
-            <form method="post" class="form-grid">
+            <form method="post" class="grid gap-4">
                 {% csrf_token %}
                 {{ todo_list_form.non_field_errors }}
                 {% for field in todo_list_form %}
-                    <div class="form-field">
-                        {{ field.label_tag }}
+                    <div class="grid gap-2 text-sm">
+                        <label class="font-medium text-[#f4eeee]" for="{{ field.id_for_label }}">{{ field.label }}</label>
                         {{ field }}
-                        {% if field.help_text %}
-                            <span class="form-help">{{ field.help_text }}</span>
-                        {% endif %}
-                        {% for error in field.errors %}
-                            <span class="form-error">{{ error }}</span>
-                        {% endfor %}
+                        {% if field.help_text %}<span class="text-xs text-[#bdaaaa]">{{ field.help_text }}</span>{% endif %}
+                        {% for error in field.errors %}<span class="text-sm text-[#ff9a9a]">{{ error }}</span>{% endfor %}
                     </div>
                 {% endfor %}
-                <div class="form-actions">
-                    <button class="button button-secondary" type="button" data-close-list-form>Отмена</button>
-                    <button class="button" type="submit">Создать список</button>
+                <div class="mt-2 flex justify-end gap-2">
+                    <button class="rounded-xl bg-[#5b4545] px-4 py-2 text-sm font-medium text-[#f4eeee] hover:bg-[#6a5050]" type="button" data-close-list-form>Отмена</button>
+                    <button class="rounded-xl bg-[#7fc8ff] px-4 py-2 text-sm font-semibold text-[#1f1e1d] hover:bg-[#9bd6ff]" type="submit">Создать список</button>
                 </div>
             </form>
         </div>
@@ -380,17 +180,19 @@
         const editListButtons = document.querySelectorAll('[data-edit-list-button]');
         const deleteListForms = document.querySelectorAll('[data-delete-list-form]');
 
-        function openListForm() {
-            listFormModal.classList.add('is-open');
+        function showModal(modal) {
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
         }
 
-        function closeListForm() {
-            listFormModal.classList.remove('is-open');
+        function hideModal(modal) {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
         }
 
         function closeOptionsMenus() {
-            document.querySelectorAll('[data-options-menu].is-open').forEach((menu) => {
-                menu.classList.remove('is-open');
+            document.querySelectorAll('[data-options-menu]').forEach((menu) => {
+                menu.classList.add('hidden');
             });
         }
 
@@ -401,38 +203,34 @@
             editListForm.elements['edit_list-color'].value = button.dataset.color || '#000000';
             editListForm.elements['edit_list-icon'].value = button.dataset.icon || '';
             closeOptionsMenus();
-            editListFormModal.classList.add('is-open');
+            showModal(editListFormModal);
         }
 
-        function closeEditListForm() {
-            editListFormModal.classList.remove('is-open');
-        }
-
-        openListFormButton.addEventListener('click', openListForm);
+        openListFormButton.addEventListener('click', () => showModal(listFormModal));
         closeListFormButtons.forEach((button) => {
-            button.addEventListener('click', closeListForm);
+            button.addEventListener('click', () => hideModal(listFormModal));
         });
         listFormModal.addEventListener('click', (event) => {
             if (event.target === listFormModal) {
-                closeListForm();
+                hideModal(listFormModal);
             }
         });
         closeEditListFormButtons.forEach((button) => {
-            button.addEventListener('click', closeEditListForm);
+            button.addEventListener('click', () => hideModal(editListFormModal));
         });
         editListFormModal.addEventListener('click', (event) => {
             if (event.target === editListFormModal) {
-                closeEditListForm();
+                hideModal(editListFormModal);
             }
         });
         optionsButtons.forEach((button) => {
             button.addEventListener('click', (event) => {
                 event.stopPropagation();
                 const menu = button.parentElement.querySelector('[data-options-menu]');
-                const isOpen = menu.classList.contains('is-open');
+                const wasHidden = menu.classList.contains('hidden');
                 closeOptionsMenus();
-                if (!isOpen) {
-                    menu.classList.add('is-open');
+                if (wasHidden) {
+                    menu.classList.remove('hidden');
                 }
             });
         });
